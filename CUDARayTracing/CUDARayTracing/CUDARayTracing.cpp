@@ -45,78 +45,6 @@ ID3D11RasterizerState  *g_pRasterState = NULL;
 
 ID3D11InputLayout      *g_pInputLayout = NULL;
 
-#ifdef USEEFFECT
-#pragma message(">>>> NOTE : Using Effect library (see DXSDK Utility folder for sources)")
-#pragma message(">>>> WARNING : Currently only libs for vc9 are provided with the sample. See DXSDK for more...")
-#pragma message(">>>> WARNING : The effect is currently failing... some strange internal error in Effect lib")
-ID3DX11Effect           *g_pSimpleEffect = NULL;
-ID3DX11EffectTechnique  *g_pSimpleTechnique = NULL;
-ID3DX11EffectVectorVariable *g_pvQuadRect = NULL;
-ID3DX11EffectScalarVariable *g_pUseCase = NULL;
-ID3DX11EffectShaderResourceVariable *g_pTexture2D = NULL;
-ID3DX11EffectShaderResourceVariable *g_pTexture3D = NULL;
-ID3DX11EffectShaderResourceVariable *g_pTextureCube = NULL;
-
-static const char g_simpleEffectSrc[] =
-    "float4 g_vQuadRect; \n" \
-    "int g_UseCase; \n" \
-    "Texture2D g_Texture2D; \n" \
-    "Texture3D g_Texture3D; \n" \
-    "TextureCube g_TextureCube; \n" \
-    "\n" \
-    "SamplerState samLinear{ \n" \
-    "    Filter = MIN_MAG_LINEAR_MIP_POINT; \n" \
-    "};\n" \
-    "\n" \
-    "struct Fragment{ \n" \
-    "    float4 Pos : SV_POSITION;\n" \
-    "    float3 Tex : TEXCOORD0; };\n" \
-    "\n" \
-    "Fragment VS( uint vertexId : SV_VertexID )\n" \
-    "{\n" \
-    "    Fragment f;\n" \
-    "    f.Tex = float3( 0.f, 0.f, 0.f); \n"\
-    "    if (vertexId == 1) f.Tex.x = 1.f; \n"\
-    "    else if (vertexId == 2) f.Tex.y = 1.f; \n"\
-    "    else if (vertexId == 3) f.Tex.xy = float2(1.f, 1.f); \n"\
-    "    \n" \
-    "    f.Pos = float4( g_vQuadRect.xy + f.Tex * g_vQuadRect.zw, 0, 1);\n" \
-    "    \n" \
-    "    if (g_UseCase == 1) { \n"\
-    "        if (vertexId == 1) f.Tex.z = 0.5f; \n"\
-    "        else if (vertexId == 2) f.Tex.z = 0.5f; \n"\
-    "        else if (vertexId == 3) f.Tex.z = 1.f; \n"\
-    "    } \n" \
-    "    else if (g_UseCase >= 2) { \n"\
-    "        f.Tex.xy = f.Tex.xy * 2.f - 1.f; \n"\
-    "    } \n" \
-    "    return f;\n" \
-    "}\n" \
-    "\n" \
-    "float4 PS( Fragment f ) : SV_Target\n" \
-    "{\n" \
-    "    if (g_UseCase == 0) return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
-    "    else if (g_UseCase == 1) return g_Texture3D.Sample( samLinear, f.Tex ); \n" \
-    "    else if (g_UseCase == 2) return g_TextureCube.Sample( samLinear, float3(f.Tex.xy, 1.0) ); \n" \
-    "    else if (g_UseCase == 3) return g_TextureCube.Sample( samLinear, float3(f.Tex.xy, -1.0) ); \n" \
-    "    else if (g_UseCase == 4) return g_TextureCube.Sample( samLinear, float3(1.0, f.Tex.xy) ); \n" \
-    "    else if (g_UseCase == 5) return g_TextureCube.Sample( samLinear, float3(-1.0, f.Tex.xy) ); \n" \
-    "    else if (g_UseCase == 6) return g_TextureCube.Sample( samLinear, float3(f.Tex.x, 1.0, f.Tex.y) ); \n" \
-    "    else if (g_UseCase == 7) return g_TextureCube.Sample( samLinear, float3(f.Tex.x, -1.0, f.Tex.y) ); \n" \
-    "    else return float4(f.Tex, 1);\n" \
-    "}\n" \
-    "\n" \
-    "technique11 Render\n" \
-    "{\n" \
-    "    pass P0\n" \
-    "    {\n" \
-    "        SetVertexShader( CompileShader( vs_5_0, VS() ) );\n" \
-    "        SetGeometryShader( NULL );\n" \
-    "        SetPixelShader( CompileShader( ps_5_0, PS() ) );\n" \
-    "    }\n" \
-    "}\n" \
-    "\n";
-#else
 //
 // Vertex and Pixel shaders here : VS() & PS()
 //
@@ -127,8 +55,6 @@ static const char g_simpleShaders[] =
     "  int g_UseCase; \n" \
     "} \n" \
     "Texture2D g_Texture2D; \n" \
-    "Texture3D g_Texture3D; \n" \
-    "TextureCube g_TextureCube; \n" \
     "\n" \
     "SamplerState samLinear{ \n" \
     "    Filter = MIN_MAG_LINEAR_MIP_POINT; \n" \
@@ -162,13 +88,6 @@ static const char g_simpleShaders[] =
     "float4 PS( Fragment f ) : SV_Target\n" \
     "{\n" \
     "    if (g_UseCase == 0) return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
-    "    else if (g_UseCase == 1) return g_Texture3D.Sample( samLinear, f.Tex ); \n" \
-    "    else if (g_UseCase == 2) return g_TextureCube.Sample( samLinear, float3(f.Tex.xy, 1.0) ); \n" \
-    "    else if (g_UseCase == 3) return g_TextureCube.Sample( samLinear, float3(f.Tex.xy, -1.0) ); \n" \
-    "    else if (g_UseCase == 4) return g_TextureCube.Sample( samLinear, float3(1.0, f.Tex.xy) ); \n" \
-    "    else if (g_UseCase == 5) return g_TextureCube.Sample( samLinear, float3(-1.0, f.Tex.xy) ); \n" \
-    "    else if (g_UseCase == 6) return g_TextureCube.Sample( samLinear, float3(f.Tex.x, 1.0, f.Tex.y) ); \n" \
-    "    else if (g_UseCase == 7) return g_TextureCube.Sample( samLinear, float3(f.Tex.x, -1.0, f.Tex.y) ); \n" \
     "    else return float4(f.Tex, 1);\n" \
     "}\n" \
     "\n";
@@ -184,7 +103,6 @@ ID3D11PixelShader   *g_pPixelShader;
 ID3D11Buffer        *g_pConstantBuffer;
 ID3D11SamplerState  *g_pSamplerState;
 
-#endif
 // testing/tracing function used pervasively in tests.  if the condition is unsatisfied
 // then spew and fail the function immediately (doing no cleanup)
 #define AssertOrQuit(x) \
@@ -220,42 +138,10 @@ struct
 #endif
 } g_texture_2d;
 
-// Data structure for volume textures shared between DX10 and CUDA
-struct
-{
-    ID3D11Texture3D         *pTexture;
-    ID3D11ShaderResourceView *pSRView;
-    cudaGraphicsResource    *cudaResource;
-    void                    *cudaLinearMemory;
-    size_t                  pitch;
-    int                     width;
-    int                     height;
-    int                     depth;
-#ifndef USEEFFECT
-    int                     offsetInShader;
-#endif
-} g_texture_3d;
-
-// Data structure for cube texture shared between DX10 and CUDA
-struct
-{
-    ID3D11Texture2D         *pTexture;
-    ID3D11ShaderResourceView *pSRView;
-    cudaGraphicsResource    *cudaResource;
-    void                    *cudaLinearMemory;
-    size_t                  pitch;
-    int                     size;
-#ifndef USEEFFECT
-    int                     offsetInShader;
-#endif
-} g_texture_cube;
-
 // The CUDA kernel launchers that get called
 extern "C"
 {
     bool cuda_texture_2d(void *surface, size_t width, size_t height, size_t pitch, float t);
-    bool cuda_texture_3d(void *surface, int width, int height, int depth, size_t pitch, size_t pitchslice, float t);
-    bool cuda_texture_cube(void *surface, int width, int height, size_t pitch, int face, float t);
 }
 
 
@@ -422,7 +308,6 @@ int main(int argc, char *argv[])
     // create window
     //
     // Register the window class
-#if 1
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
                       GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
                       "CUDA SDK", NULL
@@ -436,18 +321,7 @@ int main(int argc, char *argv[])
     HWND hWnd = CreateWindow(wc.lpszClassName, "CUDA/D3D11 Texture InterOP",
                              WS_OVERLAPPEDWINDOW, 0, 0, g_WindowWidth + 2*xBorder, g_WindowHeight+ 2*yBorder+yMenu,
                              NULL, NULL, wc.hInstance, NULL);
-#else
-    static WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, "CudaD3D9Tex", NULL };
-    RegisterClassEx(&wc);
-    HWND hWnd = CreateWindow(
-                    "CudaD3D9Tex", "CUDA D3D9 Texture Interop",
-                    WS_OVERLAPPEDWINDOW,
-                    0, 0, 800, 320,
-                    GetDesktopWindow(),
-                    NULL,
-                    wc.hInstance,
-                    NULL);
-#endif
+
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
     UpdateWindow(hWnd);
@@ -467,26 +341,6 @@ int main(int argc, char *argv[])
         cudaMallocPitch(&g_texture_2d.cudaLinearMemory, &g_texture_2d.pitch, g_texture_2d.width * sizeof(float) * 4, g_texture_2d.height);
         getLastCudaError("cudaMallocPitch (g_texture_2d) failed");
         cudaMemset(g_texture_2d.cudaLinearMemory, 1, g_texture_2d.pitch * g_texture_2d.height);
-
-        // CUBE
-        cudaGraphicsD3D11RegisterResource(&g_texture_cube.cudaResource, g_texture_cube.pTexture, cudaGraphicsRegisterFlagsNone);
-        getLastCudaError("cudaGraphicsD3D11RegisterResource (g_texture_cube) failed");
-        // create the buffer. pixel fmt is DXGI_FORMAT_R8G8B8A8_SNORM
-        cudaMallocPitch(&g_texture_cube.cudaLinearMemory, &g_texture_cube.pitch, g_texture_cube.size * 4, g_texture_cube.size);
-        getLastCudaError("cudaMallocPitch (g_texture_cube) failed");
-        cudaMemset(g_texture_cube.cudaLinearMemory, 1, g_texture_cube.pitch * g_texture_cube.size);
-        getLastCudaError("cudaMemset (g_texture_cube) failed");
-
-        // 3D
-        cudaGraphicsD3D11RegisterResource(&g_texture_3d.cudaResource, g_texture_3d.pTexture, cudaGraphicsRegisterFlagsNone);
-        getLastCudaError("cudaGraphicsD3D11RegisterResource (g_texture_3d) failed");
-        // create the buffer. pixel fmt is DXGI_FORMAT_R8G8B8A8_SNORM
-        //cudaMallocPitch(&g_texture_3d.cudaLinearMemory, &g_texture_3d.pitch, g_texture_3d.width * 4, g_texture_3d.height * g_texture_3d.depth);
-        cudaMalloc(&g_texture_3d.cudaLinearMemory, g_texture_3d.width * 4 * g_texture_3d.height * g_texture_3d.depth);
-        g_texture_3d.pitch = g_texture_3d.width * 4;
-        getLastCudaError("cudaMallocPitch (g_texture_3d) failed");
-        cudaMemset(g_texture_3d.cudaLinearMemory, 1, g_texture_3d.pitch * g_texture_3d.height * g_texture_3d.depth);
-        getLastCudaError("cudaMemset (g_texture_3d) failed");
     }
 
     //
@@ -632,38 +486,6 @@ HRESULT InitD3D(HWND hWnd)
     g_pd3dDeviceContext->RSSetViewports(1, &vp);
 
 
-#ifdef USEEFFECT
-    // Setup the effect
-    {
-        ID3D10Blob *effectCode, *effectErrors;
-        hr = D3DX11CompileFromMemory(g_simpleEffectSrc, sizeof(g_simpleEffectSrc),
-                                     "NoFile", NULL, NULL, "", "fx_5_0",
-                                     D3D10_SHADER_OPTIMIZATION_LEVEL0 | D3D10_SHADER_ENABLE_BACKWARDS_COMPATIBILITY | D3D10_SHADER_DEBUG,
-                                     0, 0, &effectCode, &effectErrors, 0);
-
-        if (FAILED(hr))
-        {
-            const char *pStr = (const char *)effectErrors->GetBufferPointer();
-            printf(pStr);
-            assert(1);
-        }
-
-        hr = D3DX11CreateEffectFromMemory(
-                 effectCode->GetBufferPointer(), effectCode->GetBufferSize(),
-                 0/*FXFlags*/,
-                 g_pd3dDevice,
-                 &g_pSimpleEffect);
-        AssertOrQuit(SUCCEEDED(hr));
-        g_pSimpleTechnique = g_pSimpleEffect->GetTechniqueByName("Render");
-
-        g_pvQuadRect = g_pSimpleEffect->GetVariableByName("g_vQuadRect")->AsVector();
-        g_pUseCase = g_pSimpleEffect->GetVariableByName("g_UseCase")->AsScalar();
-
-        g_pTexture2D = g_pSimpleEffect->GetVariableByName("g_Texture2D")->AsShaderResource();
-        g_pTexture3D = g_pSimpleEffect->GetVariableByName("g_Texture3D")->AsShaderResource();
-        g_pTextureCube = g_pSimpleEffect->GetVariableByName("g_TextureCube")->AsShaderResource();
-    }
-#else
     ID3DBlob *pShader;
     ID3DBlob *pErrorMsgs;
     // Vertex shader
@@ -723,7 +545,7 @@ HRESULT InitD3D(HWND hWnd)
         AssertOrQuit(SUCCEEDED(hr));
         g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerState);
     }
-#endif
+
     // Setup  no Input Layout
     g_pd3dDeviceContext->IASetInputLayout(0);
     g_pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -780,87 +602,8 @@ HRESULT InitTextures()
             return E_FAIL;
         }
 
-#ifdef USEEFFECT
-        g_pTexture2D->SetResource(g_texture_2d.pSRView);
-#else
         g_texture_2d.offsetInShader = 0; // to be clean we should look for the offset from the shader code
         g_pd3dDeviceContext->PSSetShaderResources(g_texture_2d.offsetInShader, 1, &g_texture_2d.pSRView);
-#endif
-    }
-
-    // 3D texture
-    {
-        g_texture_3d.width  = 64;
-        g_texture_3d.height = 64;
-        g_texture_3d.depth  = 64;
-
-        D3D11_TEXTURE3D_DESC desc;
-        ZeroMemory(&desc, sizeof(D3D11_TEXTURE3D_DESC));
-        desc.Width = g_texture_3d.width;
-        desc.Height = g_texture_3d.height;
-        desc.Depth = g_texture_3d.depth;
-        desc.MipLevels = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_SNORM;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-        if (FAILED(g_pd3dDevice->CreateTexture3D(&desc, NULL, &g_texture_3d.pTexture)))
-        {
-            return E_FAIL;
-        }
-
-        if (FAILED(g_pd3dDevice->CreateShaderResourceView(g_texture_3d.pTexture, NULL, &g_texture_3d.pSRView)))
-        {
-            return E_FAIL;
-        }
-
-#ifdef USEEFFECT
-        g_pTexture3D->SetResource(g_texture_3d.pSRView);
-#else
-        g_texture_3d.offsetInShader = 1; // to be clean we should look for the offset from the shader code
-        g_pd3dDeviceContext->PSSetShaderResources(g_texture_3d.offsetInShader, 1, &g_texture_3d.pSRView);
-#endif
-    }
-
-    // cube texture
-    {
-        g_texture_cube.size = 64;
-
-        D3D11_TEXTURE2D_DESC desc;
-        ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
-        desc.Width = g_texture_cube.size;
-        desc.Height = g_texture_cube.size;
-        desc.MipLevels = 1;
-        desc.ArraySize = 6;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE ;
-
-        if (FAILED(g_pd3dDevice->CreateTexture2D(&desc, NULL, &g_texture_cube.pTexture)))
-        {
-            return E_FAIL;
-        }
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-        ZeroMemory(&SRVDesc, sizeof(SRVDesc));
-        SRVDesc.Format = desc.Format;
-        SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-        SRVDesc.TextureCube.MipLevels = desc.MipLevels;
-        SRVDesc.TextureCube.MostDetailedMip = 0;
-
-        if (FAILED(g_pd3dDevice->CreateShaderResourceView(g_texture_cube.pTexture, &SRVDesc, &g_texture_cube.pSRView)))
-        {
-            return E_FAIL;
-        }
-
-#ifdef USEEFFECT
-        g_pTextureCube->SetResource(g_texture_cube.pSRView);
-#else
-        g_texture_cube.offsetInShader = 2; // to be clean we should look for the offset from the shader code
-        g_pd3dDeviceContext->PSSetShaderResources(g_texture_cube.offsetInShader, 1, &g_texture_cube.pSRView);
-#endif
     }
 
     return S_OK;
@@ -893,51 +636,6 @@ void RunKernels()
         getLastCudaError("cudaMemcpy2DToArray failed");
     }
     // populate the volume texture
-    {
-        size_t pitchSlice = g_texture_3d.pitch * g_texture_3d.height;
-        cudaArray *cuArray;
-        cudaGraphicsSubResourceGetMappedArray(&cuArray, g_texture_3d.cudaResource, 0, 0);
-        getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_3d) failed");
-
-        // kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-        cuda_texture_3d(g_texture_3d.cudaLinearMemory, g_texture_3d.width, g_texture_3d.height, g_texture_3d.depth, g_texture_3d.pitch, pitchSlice, t);
-        getLastCudaError("cuda_texture_3d failed");
-
-        // then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
-        struct cudaMemcpy3DParms memcpyParams = {0};
-        memcpyParams.dstArray = cuArray;
-        memcpyParams.srcPtr.ptr = g_texture_3d.cudaLinearMemory;
-        memcpyParams.srcPtr.pitch = g_texture_3d.pitch;
-        memcpyParams.srcPtr.xsize = g_texture_3d.width;
-        memcpyParams.srcPtr.ysize = g_texture_3d.height;
-        memcpyParams.extent.width = g_texture_3d.width;
-        memcpyParams.extent.height = g_texture_3d.height;
-        memcpyParams.extent.depth = g_texture_3d.depth;
-        memcpyParams.kind = cudaMemcpyDeviceToDevice;
-        cudaMemcpy3D(&memcpyParams);
-        getLastCudaError("cudaMemcpy3D failed");
-    }
-
-    // populate the faces of the cube map
-    for (int face = 0; face < 6; ++face)
-    {
-        cudaArray *cuArray;
-        cudaGraphicsSubResourceGetMappedArray(&cuArray, g_texture_cube.cudaResource, face, 0);
-        getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_cube) failed");
-
-        // kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-        cuda_texture_cube(g_texture_cube.cudaLinearMemory, g_texture_cube.size, g_texture_cube.size, g_texture_cube.pitch, face, t);
-        getLastCudaError("cuda_texture_cube failed");
-
-        // then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
-        cudaMemcpy2DToArray(
-            cuArray, // dst array
-            0, 0,    // offset
-            g_texture_cube.cudaLinearMemory, g_texture_cube.pitch, // src
-            g_texture_cube.size*4, g_texture_cube.size,            // extent
-            cudaMemcpyDeviceToDevice); // kind
-        getLastCudaError("cudaMemcpy2DToArray failed");
-    }
 
     t += 0.1f;
 }
@@ -955,11 +653,6 @@ bool DrawScene()
     //
     // draw the 2d texture
     //
-#ifdef USEEFFECT
-    g_pUseCase->SetInt(0);
-    g_pvQuadRect->SetFloatVector((float *) &quadRect);
-    g_pSimpleTechnique->GetPassByIndex(0)->Apply(0, g_pd3dDeviceContext);
-#else
     HRESULT hr;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     ConstantBuffer *pcb;
@@ -971,60 +664,7 @@ bool DrawScene()
         pcb->UseCase = 0;
     }
     g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
-#endif
     g_pd3dDeviceContext->Draw(4, 0);
-
-    //
-    // draw a slice the 3d texture
-    //
-    quadRect[1] = 0.1f;
-#ifdef USEEFFECT
-    g_pUseCase->SetInt(1);
-    g_pvQuadRect->SetFloatVector((float *) &quadRect);
-    g_pSimpleTechnique->GetPassByIndex(0)->Apply(0, g_pd3dDeviceContext);
-#else
-    hr = g_pd3dDeviceContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    AssertOrQuit(SUCCEEDED(hr));
-    pcb = (ConstantBuffer *) mappedResource.pData;
-    {
-        memcpy(pcb->vQuadRect, quadRect, sizeof(float)*4);
-        pcb->UseCase = 1;
-    }
-    g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
-#endif
-    g_pd3dDeviceContext->Draw(4, 0);
-
-    //
-    // draw the 6 faces of the cube texture
-    //
-    float faceRect[4] = { -0.1f, -0.9f, 0.5f, 0.5f };
-
-    for (int f = 0; f < 6; f++)
-    {
-        if (f == 3)
-        {
-            faceRect[0] += 0.55f ;
-            faceRect[1] = -0.9f ;
-        }
-
-#ifdef USEEFFECT
-        g_pUseCase->SetInt(2 + f);
-        g_pvQuadRect->SetFloatVector((float *) &faceRect);
-        g_pSimpleTechnique->GetPassByIndex(0)->Apply(0, g_pd3dDeviceContext);
-#else
-        hr = g_pd3dDeviceContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-        AssertOrQuit(SUCCEEDED(hr));
-        pcb = (ConstantBuffer *) mappedResource.pData;
-        {
-            memcpy(pcb->vQuadRect, faceRect, sizeof(float)*4);
-            pcb->UseCase = 2 + f;
-        }
-        g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
-#endif
-        g_pd3dDeviceContext->Draw(4, 0);
-        faceRect[1] += 0.6f ;
-
-    }
 
     // Present the backbuffer contents to the display
     g_pSwapChain->Present(0, 0);
@@ -1043,16 +683,6 @@ void Cleanup()
     cudaFree(g_texture_2d.cudaLinearMemory);
     getLastCudaError("cudaFree (g_texture_2d) failed");
 
-    cudaGraphicsUnregisterResource(g_texture_cube.cudaResource);
-    getLastCudaError("cudaGraphicsUnregisterResource (g_texture_cube) failed");
-    cudaFree(g_texture_cube.cudaLinearMemory);
-    getLastCudaError("cudaFree (g_texture_2d) failed");
-
-    cudaGraphicsUnregisterResource(g_texture_3d.cudaResource);
-    getLastCudaError("cudaGraphicsUnregisterResource (g_texture_3d) failed");
-    cudaFree(g_texture_3d.cudaLinearMemory);
-    getLastCudaError("cudaFree (g_texture_2d) failed");
-
     //
     // clean up Direct3D
     //
@@ -1060,24 +690,12 @@ void Cleanup()
         // release the resources we created
         g_texture_2d.pSRView->Release();
         g_texture_2d.pTexture->Release();
-        g_texture_cube.pSRView->Release();
-        g_texture_cube.pTexture->Release();
-        g_texture_3d.pSRView->Release();
-        g_texture_3d.pTexture->Release();
 
         if (g_pInputLayout != NULL)
         {
             g_pInputLayout->Release();
         }
 
-#ifdef USEEFFECT
-
-        if (g_pSimpleEffect != NULL)
-        {
-            g_pSimpleEffect->Release();
-        }
-
-#else
 
 
         if (g_pVertexShader)
@@ -1100,7 +718,6 @@ void Cleanup()
             g_pSamplerState->Release();
         }
 
-#endif
 
         if (g_pSwapChainRTV != NULL)
         {
@@ -1137,15 +754,13 @@ void Render()
     {
         doit = true;
         cudaStream_t    stream = 0;
-        const int nbResources = 3;
+        const int nbResources = 1;
         cudaGraphicsResource *ppResources[nbResources] =
         {
             g_texture_2d.cudaResource,
-            g_texture_3d.cudaResource,
-            g_texture_cube.cudaResource,
         };
         cudaGraphicsMapResources(nbResources, ppResources, stream);
-        getLastCudaError("cudaGraphicsMapResources(3) failed");
+        getLastCudaError("cudaGraphicsMapResources(1) failed");
 
         //
         // run kernels which will populate the contents of those textures
@@ -1156,7 +771,7 @@ void Render()
         // unmap the resources
         //
         cudaGraphicsUnmapResources(nbResources, ppResources, stream);
-        getLastCudaError("cudaGraphicsUnmapResources(3) failed");
+        getLastCudaError("cudaGraphicsUnmapResources(1) failed");
     }
 
     //

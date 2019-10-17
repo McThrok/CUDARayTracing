@@ -99,8 +99,6 @@
     <ClCompile Include="rendercheck_d3d11.cpp" />
     <ClInclude Include="rendercheck_d3d11.h" />
     <CudaCompile Include="texture_2d.cu" />
-    <CudaCompile Include="texture_3d.cu" />
-    <CudaCompile Include="texture_cube.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
