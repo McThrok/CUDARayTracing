@@ -112,7 +112,7 @@ struct
 // The CUDA kernel launchers that get called
 extern "C"
 {
-	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float t);
+	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float* spheres, int num_sphere);
 }
 
 
@@ -426,7 +426,7 @@ void InitSpheres() {
 	h_spheres[0] = 0;
 	h_spheres[1] = 0;
 	h_spheres[2] = 0;
-	h_spheres[0] = 0.5f;
+	h_spheres[3] = 0.5f;
 
 	checkCudaErrors(cudaMalloc((void**)&g_texture_2d.spheres, mem_size));
 	checkCudaErrors(cudaMemcpy(g_texture_2d.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
@@ -448,7 +448,7 @@ void RunKernels()
 		getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 		// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.sphere_num);
+		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.spheres,g_texture_2d.sphere_num);
 		getLastCudaError("cuda_texture_2d failed");
 
 		// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
@@ -559,8 +559,6 @@ void Cleanup()
 		{
 			g_pd3dDevice->Release();
 		}
-
-
 	}
 }
 
