@@ -15,7 +15,6 @@
 
 #define MAX_EPSILON 10
 
-static char* SDK_name = "simpleD3D11Texture";
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -32,54 +31,47 @@ ID3D11InputLayout* g_pInputLayout = NULL;
 //
 // Vertex and Pixel shaders here : VS() & PS()
 //
-static const char g_simpleShaders[] =
-"cbuffer cbuf \n" \
+static const char g_simpleShaders[] = " \n" \
+"cbuffer cbuf  \n" \
+"{  \n" \
+"  float4 g_vQuadRect;  \n" \
+"}  \n" \
+"Texture2D g_Texture2D;  \n" \
+" \n" \
+"SamplerState samLinear{  \n" \
+"    Filter = MIN_MAG_LINEAR_MIP_POINT;  \n" \
+"}; \n" \
+" \n" \
+"struct Fragment{  \n" \
+"    float4 Pos : SV_POSITION; \n" \
+"    float3 Tex : TEXCOORD0; }; \n" \
+" \n" \
+"Fragment VS( uint vertexId : SV_VertexID ) \n" \
 "{ \n" \
-"  float4 g_vQuadRect; \n" \
-"  int g_UseCase; \n" \
+"    Fragment f; \n" \
+"    f.Tex = float3( 0.f, 0.f, 0.f);  \n" \
+"    if (vertexId == 1) f.Tex.x = 1.f;  \n" \
+"    else if (vertexId == 2) f.Tex.y = 1.f;  \n" \
+"    else if (vertexId == 3) f.Tex.xy = float2(1.f, 1.f);  \n" \
+"     \n" \
+"    f.Pos = float4( g_vQuadRect.xy + f.Tex * g_vQuadRect.zw, 0, 1); \n" \
+"     \n" \
+"    if (vertexId == 1) f.Tex.z = 0.5f;  \n" \
+"    else if (vertexId == 2) f.Tex.z = 0.5f;  \n" \
+"    else if (vertexId == 3) f.Tex.z = 1.f;  \n" \
+" \n" \
+"    return f; \n" \
 "} \n" \
-"Texture2D g_Texture2D; \n" \
-"\n" \
-"SamplerState samLinear{ \n" \
-"    Filter = MIN_MAG_LINEAR_MIP_POINT; \n" \
-"};\n" \
-"\n" \
-"struct Fragment{ \n" \
-"    float4 Pos : SV_POSITION;\n" \
-"    float3 Tex : TEXCOORD0; };\n" \
-"\n" \
-"Fragment VS( uint vertexId : SV_VertexID )\n" \
-"{\n" \
-"    Fragment f;\n" \
-"    f.Tex = float3( 0.f, 0.f, 0.f); \n"\
-"    if (vertexId == 1) f.Tex.x = 1.f; \n"\
-"    else if (vertexId == 2) f.Tex.y = 1.f; \n"\
-"    else if (vertexId == 3) f.Tex.xy = float2(1.f, 1.f); \n"\
-"    \n" \
-"    f.Pos = float4( g_vQuadRect.xy + f.Tex * g_vQuadRect.zw, 0, 1);\n" \
-"    \n" \
-"    if (g_UseCase == 1) { \n"\
-"        if (vertexId == 1) f.Tex.z = 0.5f; \n"\
-"        else if (vertexId == 2) f.Tex.z = 0.5f; \n"\
-"        else if (vertexId == 3) f.Tex.z = 1.f; \n"\
-"    } \n" \
-"    else if (g_UseCase >= 2) { \n"\
-"        f.Tex.xy = f.Tex.xy * 2.f - 1.f; \n"\
-"    } \n" \
-"    return f;\n" \
-"}\n" \
-"\n" \
-"float4 PS( Fragment f ) : SV_Target\n" \
-"{\n" \
-"    if (g_UseCase == 0) return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
-"    else return float4(f.Tex, 1);\n" \
-"}\n" \
+" \n" \
+"float4 PS( Fragment f ) : SV_Target \n" \
+"{ \n" \
+"    return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
+"} \n" \
 "\n";
 
 struct ConstantBuffer
 {
 	float   vQuadRect[4];
-	int     UseCase;
 };
 
 ID3D11VertexShader* g_pVertexShader;
@@ -108,10 +100,13 @@ struct
 	ID3D11ShaderResourceView* pSRView;
 	cudaGraphicsResource* cudaResource;
 	void* cudaLinearMemory;
-	size_t                  pitch;
-	int                     width;
-	int                     height;
-	int                     offsetInShader;
+	size_t pitch;
+	int width;
+	int height;
+	int offsetInShader;
+
+	float* spheres;
+	int sphere_num;
 } g_texture_2d;
 
 // The CUDA kernel launchers that get called
@@ -120,18 +115,6 @@ extern "C"
 	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float t);
 }
 
-//-----------------------------------------------------------------------------
-// Forward declarations
-//-----------------------------------------------------------------------------
-//HRESULT InitD3D(HWND hWnd);
-//HRESULT InitTextures();
-//
-//void RunKernels();
-//bool DrawScene();
-//void Cleanup();
-//void Render();
-//
-//LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define NAME_LEN    512
 
@@ -404,8 +387,8 @@ HRESULT InitTextures()
 	//
 	// 2D texture
 	{
-		g_texture_2d.width = 256;
-		g_texture_2d.height = 256;
+		g_texture_2d.width = g_WindowWidth;
+		g_texture_2d.height = g_WindowHeight;
 
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
@@ -435,6 +418,22 @@ HRESULT InitTextures()
 	return S_OK;
 }
 
+void InitSpheres() {
+	g_texture_2d.sphere_num = 1;
+	unsigned int mem_size = sizeof(float) *4* g_texture_2d.sphere_num;
+	float* h_spheres = (float*)malloc(mem_size);
+
+	h_spheres[0] = 0;
+	h_spheres[1] = 0;
+	h_spheres[2] = 0;
+	h_spheres[0] = 0.5f;
+
+	checkCudaErrors(cudaMalloc((void**)&g_texture_2d.spheres, mem_size));
+	checkCudaErrors(cudaMemcpy(g_texture_2d.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
+
+	free(h_spheres);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //! Run the Cuda part of the computation
 ////////////////////////////////////////////////////////////////////////////////
@@ -449,7 +448,7 @@ void RunKernels()
 		getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 		// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, t);
+		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.sphere_num);
 		getLastCudaError("cuda_texture_2d failed");
 
 		// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
@@ -475,7 +474,7 @@ bool DrawScene()
 	float ClearColor[4] = { 0.5f, 0.5f, 0.6f, 1.0f };
 	g_pd3dDeviceContext->ClearRenderTargetView(g_pSwapChainRTV, ClearColor);
 
-	float quadRect[4] = { -0.9f,  -0.9f,  0.9f , 0.9f };
+	float quadRect[4] = { -1,  -1,  2 , 2 };
 	//
 	// draw the 2d texture
 	//
@@ -487,7 +486,6 @@ bool DrawScene()
 	pcb = (ConstantBuffer*)mappedResource.pData;
 	{
 		memcpy(pcb->vQuadRect, quadRect, sizeof(float) * 4);
-		pcb->UseCase = 0;
 	}
 	g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
 	g_pd3dDeviceContext->Draw(4, 0);
@@ -517,11 +515,13 @@ void Cleanup()
 		g_texture_2d.pSRView->Release();
 		g_texture_2d.pTexture->Release();
 
+		checkCudaErrors(cudaFree(g_texture_2d.spheres));
+
+
 		if (g_pInputLayout != NULL)
 		{
 			g_pInputLayout->Release();
 		}
-
 
 
 		if (g_pVertexShader)
@@ -559,6 +559,8 @@ void Cleanup()
 		{
 			g_pd3dDevice->Release();
 		}
+
+
 	}
 }
 
@@ -646,8 +648,6 @@ int main(int argc, char* argv[])
 {
 	char device_name[256];
 
-	printf("[%s] - Starting...\n", SDK_name);
-
 	if (!findCUDADevice())                   // Search for CUDA GPU
 	{
 		printf("> CUDA Device NOT found on \"%s\".. Exiting.\n", device_name);
@@ -695,6 +695,7 @@ int main(int argc, char* argv[])
 	if (SUCCEEDED(InitD3D(hWnd)) &&
 		SUCCEEDED(InitTextures()))
 	{
+		InitSpheres();
 		// 2D
 		// register the Direct3D resources that we'll use
 		// we'll read to and write from g_texture_2d, so don't set any special map flags for it
@@ -742,10 +743,6 @@ int main(int argc, char* argv[])
 	// Unregister windows class
 	UnregisterClass(wc.lpszClassName, wc.hInstance);
 
-	//
-	// and exit
-	//
-	printf("> %s running on %s exiting...\n", SDK_name, device_name);
 
 	exit(EXIT_SUCCESS);
 }
