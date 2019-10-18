@@ -96,8 +96,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CUDARayTracing.cpp" />
-    <ClCompile Include="rendercheck_d3d11.cpp" />
-    <ClInclude Include="rendercheck_d3d11.h" />
     <CudaCompile Include="texture_2d.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
