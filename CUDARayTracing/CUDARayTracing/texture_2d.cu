@@ -1,26 +1,9 @@
-/*
- * Copyright 1993-2015 NVIDIA Corporation.  All rights reserved.
- *
- * Please refer to the NVIDIA end user license agreement (EULA) associated
- * with this source code for terms and conditions that govern your use of
- * this software. Any use, reproduction, disclosure, or distribution of
- * this software and related documentation outside the terms of the EULA
- * is strictly prohibited.
- *
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define PI 3.1415926536f
 
- /*
-  * Paint a 2D texture with a moving red/green hatch pattern on a
-  * strobing blue background.  Note that this kernel reads to and
-  * writes from the texture, hence why this texture was not mapped
-  * as WriteDiscard.
-  */
 __global__ void cuda_kernel_texture_2d(unsigned char* surface, int width, int height, size_t pitch, float* spheres, int num_sphere)
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;

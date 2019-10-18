@@ -420,7 +420,7 @@ HRESULT InitTextures()
 
 void InitSpheres() {
 	g_texture_2d.sphere_num = 1;
-	unsigned int mem_size = sizeof(float) *4* g_texture_2d.sphere_num;
+	unsigned int mem_size = sizeof(float) * 4 * g_texture_2d.sphere_num;
 	float* h_spheres = (float*)malloc(mem_size);
 
 	h_spheres[0] = 0;
@@ -439,8 +439,6 @@ void InitSpheres() {
 ////////////////////////////////////////////////////////////////////////////////
 void RunKernels()
 {
-	static float t = 0.0f;
-
 	// populate the 2d texture
 	{
 		cudaArray* cuArray;
@@ -448,7 +446,7 @@ void RunKernels()
 		getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 		// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.spheres,g_texture_2d.sphere_num);
+		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.spheres, g_texture_2d.sphere_num);
 		getLastCudaError("cuda_texture_2d failed");
 
 		// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
@@ -460,9 +458,6 @@ void RunKernels()
 			cudaMemcpyDeviceToDevice); // kind
 		getLastCudaError("cudaMemcpy2DToArray failed");
 	}
-	// populate the volume texture
-
-	t += 0.1f;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -502,10 +497,9 @@ bool DrawScene()
 void Cleanup()
 {
 	// unregister the Cuda resources
-	cudaGraphicsUnregisterResource(g_texture_2d.cudaResource);
-	getLastCudaError("cudaGraphicsUnregisterResource (g_texture_2d) failed");
-	cudaFree(g_texture_2d.cudaLinearMemory);
-	getLastCudaError("cudaFree (g_texture_2d) failed");
+	checkCudaErrors(cudaGraphicsUnregisterResource(g_texture_2d.cudaResource));
+	checkCudaErrors(cudaFree(g_texture_2d.cudaLinearMemory));
+	checkCudaErrors(cudaFree(g_texture_2d.spheres));
 
 	//
 	// clean up Direct3D
@@ -515,50 +509,29 @@ void Cleanup()
 		g_texture_2d.pSRView->Release();
 		g_texture_2d.pTexture->Release();
 
-		checkCudaErrors(cudaFree(g_texture_2d.spheres));
-
-
 		if (g_pInputLayout != NULL)
-		{
 			g_pInputLayout->Release();
-		}
-
 
 		if (g_pVertexShader)
-		{
 			g_pVertexShader->Release();
-		}
 
 		if (g_pPixelShader)
-		{
 			g_pPixelShader->Release();
-		}
 
 		if (g_pConstantBuffer)
-		{
 			g_pConstantBuffer->Release();
-		}
 
 		if (g_pSamplerState)
-		{
 			g_pSamplerState->Release();
-		}
-
 
 		if (g_pSwapChainRTV != NULL)
-		{
 			g_pSwapChainRTV->Release();
-		}
 
 		if (g_pSwapChain != NULL)
-		{
 			g_pSwapChain->Release();
-		}
 
 		if (g_pd3dDevice != NULL)
-		{
 			g_pd3dDevice->Release();
-		}
 	}
 }
 
@@ -574,31 +547,20 @@ void Render()
 	//   and to have the map/unmap calls be the boundary between using the GPU
 	//   for Direct3D and Cuda
 	//
-	static bool doit = true;
 
-	if (doit)
-	{
-		doit = true;
-		cudaStream_t    stream = 0;
-		const int nbResources = 1;
-		cudaGraphicsResource* ppResources[nbResources] =
-		{
-			g_texture_2d.cudaResource,
-		};
-		cudaGraphicsMapResources(nbResources, ppResources, stream);
-		getLastCudaError("cudaGraphicsMapResources(1) failed");
+	cudaGraphicsMapResources(1, &g_texture_2d.cudaResource, 0);
+	getLastCudaError("cudaGraphicsMapResources(1) failed");
 
-		//
-		// run kernels which will populate the contents of those textures
-		//
-		RunKernels();
+	//
+	// run kernels which will populate the contents of those textures
+	//
+	RunKernels();
 
-		//
-		// unmap the resources
-		//
-		cudaGraphicsUnmapResources(nbResources, ppResources, stream);
-		getLastCudaError("cudaGraphicsUnmapResources(1) failed");
-	}
+	//
+	// unmap the resources
+	//
+	cudaGraphicsUnmapResources(1, &g_texture_2d.cudaResource, 0);
+	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
 
 	//
 	// draw the scene using them
