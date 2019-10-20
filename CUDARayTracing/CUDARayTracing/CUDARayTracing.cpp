@@ -13,7 +13,7 @@
 #include <helper_cuda.h>
 #include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
 
-#define MAX_EPSILON 10
+#include "RayTracingKernel.h"
 
 
 //-----------------------------------------------------------------------------
@@ -27,6 +27,8 @@ ID3D11RenderTargetView* g_pSwapChainRTV = NULL; //The Render target view on the 
 ID3D11RasterizerState* g_pRasterState = NULL;
 
 ID3D11InputLayout* g_pInputLayout = NULL;
+
+RayTracingKernel rtk;
 
 //
 // Vertex and Pixel shaders here : VS() & PS()
@@ -98,23 +100,9 @@ struct
 {
 	ID3D11Texture2D* pTexture;
 	ID3D11ShaderResourceView* pSRView;
-	cudaGraphicsResource* cudaResource;
-	void* cudaLinearMemory;
-	size_t pitch;
-	int width;
-	int height;
 	int offsetInShader;
 
-	float* spheres;
-	int sphere_num;
 } g_texture_2d;
-
-// The CUDA kernel launchers that get called
-extern "C"
-{
-	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float* spheres, int num_sphere);
-}
-
 
 #define NAME_LEN    512
 
@@ -387,13 +375,13 @@ HRESULT InitTextures()
 	//
 	// 2D texture
 	{
-		g_texture_2d.width = g_WindowWidth;
-		g_texture_2d.height = g_WindowHeight;
+		rtk.width = g_WindowWidth;
+		rtk.height = g_WindowHeight;
 
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
-		desc.Width = g_texture_2d.width;
-		desc.Height = g_texture_2d.height;
+		desc.Width = rtk.width;
+		desc.Height = rtk.height;
 		desc.MipLevels = 1;
 		desc.ArraySize = 1;
 		desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -419,8 +407,9 @@ HRESULT InitTextures()
 }
 
 void InitSpheres() {
-	g_texture_2d.sphere_num = 1;
-	unsigned int mem_size = sizeof(float) * 4 * g_texture_2d.sphere_num;
+	rtk.spheres_num = 1;
+
+	unsigned int mem_size = sizeof(float) * 4 * rtk.spheres_num;
 	float* h_spheres = (float*)malloc(mem_size);
 
 	h_spheres[0] = 0;
@@ -428,36 +417,10 @@ void InitSpheres() {
 	h_spheres[2] = 0;
 	h_spheres[3] = 0.5f;
 
-	checkCudaErrors(cudaMalloc((void**)&g_texture_2d.spheres, mem_size));
-	checkCudaErrors(cudaMemcpy(g_texture_2d.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc((void**)&rtk.spheres, mem_size));
+	checkCudaErrors(cudaMemcpy(rtk.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
 
 	free(h_spheres);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//! Run the Cuda part of the computation
-////////////////////////////////////////////////////////////////////////////////
-void RunKernels()
-{
-	// populate the 2d texture
-	{
-		cudaArray* cuArray;
-		cudaGraphicsSubResourceGetMappedArray(&cuArray, g_texture_2d.cudaResource, 0, 0);
-		getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
-
-		// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-		cuda_texture_2d(g_texture_2d.cudaLinearMemory, g_texture_2d.width, g_texture_2d.height, g_texture_2d.pitch, g_texture_2d.spheres, g_texture_2d.sphere_num);
-		getLastCudaError("cuda_texture_2d failed");
-
-		// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
-		cudaMemcpy2DToArray(
-			cuArray, // dst array
-			0, 0,    // offset
-			g_texture_2d.cudaLinearMemory, g_texture_2d.pitch,       // src
-			g_texture_2d.width * 4 * sizeof(float), g_texture_2d.height, // extent
-			cudaMemcpyDeviceToDevice); // kind
-		getLastCudaError("cudaMemcpy2DToArray failed");
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -496,14 +459,11 @@ bool DrawScene()
 //-----------------------------------------------------------------------------
 void Cleanup()
 {
-	// unregister the Cuda resources
-	checkCudaErrors(cudaGraphicsUnregisterResource(g_texture_2d.cudaResource));
-	checkCudaErrors(cudaFree(g_texture_2d.cudaLinearMemory));
-	checkCudaErrors(cudaFree(g_texture_2d.spheres));
-
 	//
 	// clean up Direct3D
 	//
+	rtk.Cleanup();
+
 	{
 		// release the resources we created
 		g_texture_2d.pSRView->Release();
@@ -541,26 +501,7 @@ void Cleanup()
 //-----------------------------------------------------------------------------
 void Render()
 {
-	//
-	// map the resources we've registered so we can access them in Cuda
-	// - it is most efficient to map and unmap all resources in a single call,
-	//   and to have the map/unmap calls be the boundary between using the GPU
-	//   for Direct3D and Cuda
-	//
-
-	cudaGraphicsMapResources(1, &g_texture_2d.cudaResource, 0);
-	getLastCudaError("cudaGraphicsMapResources(1) failed");
-
-	//
-	// run kernels which will populate the contents of those textures
-	//
-	RunKernels();
-
-	//
-	// unmap the resources
-	//
-	cudaGraphicsUnmapResources(1, &g_texture_2d.cudaResource, 0);
-	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
+	rtk.Run();
 
 	//
 	// draw the scene using them
@@ -659,14 +600,14 @@ int main(int argc, char* argv[])
 		// 2D
 		// register the Direct3D resources that we'll use
 		// we'll read to and write from g_texture_2d, so don't set any special map flags for it
-		cudaGraphicsD3D11RegisterResource(&g_texture_2d.cudaResource, g_texture_2d.pTexture, cudaGraphicsRegisterFlagsNone);
+		cudaGraphicsD3D11RegisterResource(&rtk.cudaResource, g_texture_2d.pTexture, cudaGraphicsRegisterFlagsNone);
 		getLastCudaError("cudaGraphicsD3D11RegisterResource (g_texture_2d) failed");
 		// cuda cannot write into the texture directly : the texture is seen as a cudaArray and can only be mapped as a texture
 		// Create a buffer so that cuda can write into it
 		// pixel fmt is DXGI_FORMAT_R32G32B32A32_FLOAT
-		cudaMallocPitch(&g_texture_2d.cudaLinearMemory, &g_texture_2d.pitch, g_texture_2d.width * sizeof(float) * 4, g_texture_2d.height);
+		cudaMallocPitch(&rtk.cudaLinearMemory, &rtk.pitch, rtk.width * sizeof(float) * 4, rtk.height);
 		getLastCudaError("cudaMallocPitch (g_texture_2d) failed");
-		cudaMemset(g_texture_2d.cudaLinearMemory, 1, g_texture_2d.pitch * g_texture_2d.height);
+		cudaMemset(rtk.cudaLinearMemory, 1, rtk.pitch * rtk.height);
 	}
 
 	//
