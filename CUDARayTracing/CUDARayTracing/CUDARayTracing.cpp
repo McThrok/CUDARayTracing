@@ -70,33 +70,12 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int main(int argc, char* argv[])
 {
-	char device_name[256];
-
 	if (!rtk.findCUDADevice())                   // Search for CUDA GPU
-	{
-		printf("> CUDA Device NOT found on \"%s\".. Exiting.\n", device_name);
 		exit(EXIT_SUCCESS);
-	}
 
-	if (!dynlinkLoadD3D11API())                  // Search for D3D API (locate drivers, does not mean device is found)
-	{
-		printf("> D3D11 API libraries NOT found on.. Exiting.\n");
-		dynlinkUnloadD3D11API();
+	if (!dxm.findDXDevice())           // Search for D3D Hardware Device
 		exit(EXIT_SUCCESS);
-	}
 
-	if (!dxm.findDXDevice(device_name))           // Search for D3D Hardware Device
-	{
-		printf("> D3D11 Graphics Device NOT found.. Exiting.\n");
-		dynlinkUnloadD3D11API();
-		exit(EXIT_SUCCESS);
-	}
-
-
-	//
-	// create window
-	//
-	// Register the window class
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
 					  GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr,
 					  "CUDA SDK", nullptr
@@ -164,9 +143,6 @@ int main(int argc, char* argv[])
 		}
 
 	};
-
-	// Release D3D Library (after message loop)
-	dynlinkUnloadD3D11API();
 
 	// Unregister windows class
 	UnregisterClass(wc.lpszClassName, wc.hInstance);
