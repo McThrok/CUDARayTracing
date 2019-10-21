@@ -1,5 +1,12 @@
 #include "DXManager.h"
 
+#define AssertOrQuit(x) \
+    if (!(x)) \
+    { \
+        fprintf(stdout, "Assert unsatisfied in %s at %s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
+        return 1; \
+    }
+
 const char DXManager::g_simpleShaders[] = " \n" \
 "cbuffer cbuf  \n" \
 "{  \n" \
@@ -37,3 +44,58 @@ const char DXManager::g_simpleShaders[] = " \n" \
 "    return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
 "} \n" \
 "\n";
+
+
+////////////////////////////////////////////////////////////////////////////////
+//! Draw the final result on the screen
+////////////////////////////////////////////////////////////////////////////////
+bool DXManager::DrawScene()
+{
+	// Clear the backbuffer to a black color
+	float ClearColor[4] = { 0.5f, 0.5f, 0.6f, 1.0f };
+	g_pd3dDeviceContext->ClearRenderTargetView(g_pSwapChainRTV, ClearColor);
+
+	float quadRect[4] = { -1,  -1,  2 , 2 };
+	//
+	// draw the 2d texture
+	//
+	HRESULT hr;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	ConstantBuffer* pcb;
+	hr = g_pd3dDeviceContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	AssertOrQuit(SUCCEEDED(hr));
+	pcb = (ConstantBuffer*)mappedResource.pData;
+	{
+		memcpy(pcb->vQuadRect, quadRect, sizeof(float) * 4);
+	}
+	g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
+	g_pd3dDeviceContext->Draw(4, 0);
+
+	// Present the backbuffer contents to the display
+	g_pSwapChain->Present(0, 0);
+	return true;
+}
+
+void DXManager::Cleanup()
+{
+		if (g_pVertexShader)
+			g_pVertexShader->Release();
+
+		if (g_pPixelShader)
+			g_pPixelShader->Release();
+
+		if (g_pConstantBuffer)
+			g_pConstantBuffer->Release();
+
+		if (g_pSamplerState)
+			g_pSamplerState->Release();
+
+		if (g_pSwapChainRTV != nullptr)
+			g_pSwapChainRTV->Release();
+
+		if (g_pSwapChain != nullptr)
+			g_pSwapChain->Release();
+
+		if (g_pd3dDevice != nullptr)
+			g_pd3dDevice->Release();
+}

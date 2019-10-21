@@ -88,68 +88,6 @@ bool findCUDADevice()
 	return true;
 }
 
-bool findDXDevice(char* dev_name)
-{
-	HRESULT hr = S_OK;
-	cudaError cuStatus;
-
-	// Iterate through the candidate adapters
-	IDXGIFactory* pFactory;
-	hr = sFnPtr_CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&pFactory));
-
-	if (!SUCCEEDED(hr))
-	{
-		printf("> No DXGI Factory created.\n");
-		return false;
-	}
-
-	UINT adapter = 0;
-
-	for (; !dxm.g_pCudaCapableAdapter; ++adapter)
-	{
-		// Get a candidate DXGI adapter
-		IDXGIAdapter* pAdapter = nullptr;
-		hr = pFactory->EnumAdapters(adapter, &pAdapter);
-
-		if (FAILED(hr))
-		{
-			break;    // no compatible adapters found
-		}
-
-		// Query to see if there exists a corresponding compute device
-		int cuDevice;
-		cuStatus = cudaD3D11GetDevice(&cuDevice, pAdapter);
-		printLastCudaError("cudaD3D11GetDevice failed"); //This prints and resets the cudaError to cudaSuccess
-
-		if (cudaSuccess == cuStatus)
-		{
-			// If so, mark it as the one against which to create our d3d10 device
-			dxm.g_pCudaCapableAdapter = pAdapter;
-			dxm.g_pCudaCapableAdapter->AddRef();
-		}
-
-		pAdapter->Release();
-	}
-
-	printf("> Found %d D3D11 Adapater(s).\n", (int)adapter);
-
-	pFactory->Release();
-
-	if (!dxm.g_pCudaCapableAdapter)
-	{
-		printf("> Found 0 D3D11 Adapater(s) /w Compute capability.\n");
-		return false;
-	}
-
-	DXGI_ADAPTER_DESC adapterDesc;
-	dxm.g_pCudaCapableAdapter->GetDesc(&adapterDesc);
-	wcstombs(dev_name, adapterDesc.Description, 128);
-
-	printf("> Found 1 D3D11 Adapater(s) /w Compute capability.\n");
-	printf("> %s\n", dev_name);
-
-	return true;
-}
 
 //-----------------------------------------------------------------------------
 // Name: InitD3D()
@@ -366,35 +304,6 @@ void InitSpheres() {
 	free(h_spheres);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//! Draw the final result on the screen
-////////////////////////////////////////////////////////////////////////////////
-bool DrawScene()
-{
-	// Clear the backbuffer to a black color
-	float ClearColor[4] = { 0.5f, 0.5f, 0.6f, 1.0f };
-	dxm.g_pd3dDeviceContext->ClearRenderTargetView(dxm.g_pSwapChainRTV, ClearColor);
-
-	float quadRect[4] = { -1,  -1,  2 , 2 };
-	//
-	// draw the 2d texture
-	//
-	HRESULT hr;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	ConstantBuffer* pcb;
-	hr = dxm.g_pd3dDeviceContext->Map(dxm.g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	AssertOrQuit(SUCCEEDED(hr));
-	pcb = (ConstantBuffer*)mappedResource.pData;
-	{
-		memcpy(pcb->vQuadRect, quadRect, sizeof(float) * 4);
-	}
-	dxm.g_pd3dDeviceContext->Unmap(dxm.g_pConstantBuffer, 0);
-	dxm.g_pd3dDeviceContext->Draw(4, 0);
-
-	// Present the backbuffer contents to the display
-	dxm.g_pSwapChain->Present(0, 0);
-	return true;
-}
 
 //-----------------------------------------------------------------------------
 // Name: Cleanup()
@@ -412,27 +321,7 @@ void Cleanup()
 		g_texture_2d.pSRView->Release();
 		g_texture_2d.pTexture->Release();
 
-
-		if (dxm.g_pVertexShader)
-			dxm.g_pVertexShader->Release();
-
-		if (dxm.g_pPixelShader)
-			dxm.g_pPixelShader->Release();
-
-		if (dxm.g_pConstantBuffer)
-			dxm.g_pConstantBuffer->Release();
-
-		if (dxm.g_pSamplerState)
-			dxm.g_pSamplerState->Release();
-
-		if (dxm.g_pSwapChainRTV != nullptr)
-			dxm.g_pSwapChainRTV->Release();
-
-		if (dxm.g_pSwapChain != nullptr)
-			dxm.g_pSwapChain->Release();
-
-		if (dxm.g_pd3dDevice != nullptr)
-			dxm.g_pd3dDevice->Release();
+		dxm.Cleanup();
 	}
 }
 
@@ -444,10 +333,7 @@ void Render()
 {
 	rtk.Run();
 
-	//
-	// draw the scene using them
-	//
-	DrawScene();
+	dxm.DrawScene();
 }
 
 //-----------------------------------------------------------------------------
@@ -503,7 +389,7 @@ int main(int argc, char* argv[])
 		exit(EXIT_SUCCESS);
 	}
 
-	if (!findDXDevice(device_name))           // Search for D3D Hardware Device
+	if (!dxm.findDXDevice(device_name))           // Search for D3D Hardware Device
 	{
 		printf("> D3D11 Graphics Device NOT found.. Exiting.\n");
 		dynlinkUnloadD3D11API();
