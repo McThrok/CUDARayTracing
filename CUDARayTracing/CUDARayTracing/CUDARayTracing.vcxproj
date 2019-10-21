@@ -96,10 +96,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CUDARayTracing.cpp" />
+    <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="RayTracingKernel.cpp" />
     <CudaCompile Include="texture_2d.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DXManager.h" />
     <ClInclude Include="RayTracingKernel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

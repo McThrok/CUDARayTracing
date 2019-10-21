@@ -14,72 +14,15 @@
 #include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
 
 #include "RayTracingKernel.h"
+#include "DXManager.h"
 
 
 //-----------------------------------------------------------------------------
 // Global variables
 //-----------------------------------------------------------------------------
-IDXGIAdapter* g_pCudaCapableAdapter = NULL;  // Adapter to use
-ID3D11Device* g_pd3dDevice = NULL; // Our rendering device
-ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
-IDXGISwapChain* g_pSwapChain = NULL; // The swap chain of the window
-ID3D11RenderTargetView* g_pSwapChainRTV = NULL; //The Render target view on the swap chain ( used for clear)
-ID3D11RasterizerState* g_pRasterState = NULL;
-
-ID3D11InputLayout* g_pInputLayout = NULL;
-
 RayTracingKernel rtk;
+DXManager dxm;
 
-//
-// Vertex and Pixel shaders here : VS() & PS()
-//
-static const char g_simpleShaders[] = " \n" \
-"cbuffer cbuf  \n" \
-"{  \n" \
-"  float4 g_vQuadRect;  \n" \
-"}  \n" \
-"Texture2D g_Texture2D;  \n" \
-" \n" \
-"SamplerState samLinear{  \n" \
-"    Filter = MIN_MAG_LINEAR_MIP_POINT;  \n" \
-"}; \n" \
-" \n" \
-"struct Fragment{  \n" \
-"    float4 Pos : SV_POSITION; \n" \
-"    float3 Tex : TEXCOORD0; }; \n" \
-" \n" \
-"Fragment VS( uint vertexId : SV_VertexID ) \n" \
-"{ \n" \
-"    Fragment f; \n" \
-"    f.Tex = float3( 0.f, 0.f, 0.f);  \n" \
-"    if (vertexId == 1) f.Tex.x = 1.f;  \n" \
-"    else if (vertexId == 2) f.Tex.y = 1.f;  \n" \
-"    else if (vertexId == 3) f.Tex.xy = float2(1.f, 1.f);  \n" \
-"     \n" \
-"    f.Pos = float4( g_vQuadRect.xy + f.Tex * g_vQuadRect.zw, 0, 1); \n" \
-"     \n" \
-"    if (vertexId == 1) f.Tex.z = 0.5f;  \n" \
-"    else if (vertexId == 2) f.Tex.z = 0.5f;  \n" \
-"    else if (vertexId == 3) f.Tex.z = 1.f;  \n" \
-" \n" \
-"    return f; \n" \
-"} \n" \
-" \n" \
-"float4 PS( Fragment f ) : SV_Target \n" \
-"{ \n" \
-"    return g_Texture2D.Sample( samLinear, f.Tex.xy ); \n" \
-"} \n" \
-"\n";
-
-struct ConstantBuffer
-{
-	float   vQuadRect[4];
-};
-
-ID3D11VertexShader* g_pVertexShader;
-ID3D11PixelShader* g_pPixelShader;
-ID3D11Buffer* g_pConstantBuffer;
-ID3D11SamplerState* g_pSamplerState;
 
 // testing/tracing function used pervasively in tests.  if the condition is unsatisfied
 // then spew and fail the function immediately (doing no cleanup)
@@ -162,10 +105,10 @@ bool findDXDevice(char* dev_name)
 
 	UINT adapter = 0;
 
-	for (; !g_pCudaCapableAdapter; ++adapter)
+	for (; !dxm.g_pCudaCapableAdapter; ++adapter)
 	{
 		// Get a candidate DXGI adapter
-		IDXGIAdapter* pAdapter = NULL;
+		IDXGIAdapter* pAdapter = nullptr;
 		hr = pFactory->EnumAdapters(adapter, &pAdapter);
 
 		if (FAILED(hr))
@@ -181,8 +124,8 @@ bool findDXDevice(char* dev_name)
 		if (cudaSuccess == cuStatus)
 		{
 			// If so, mark it as the one against which to create our d3d10 device
-			g_pCudaCapableAdapter = pAdapter;
-			g_pCudaCapableAdapter->AddRef();
+			dxm.g_pCudaCapableAdapter = pAdapter;
+			dxm.g_pCudaCapableAdapter->AddRef();
 		}
 
 		pAdapter->Release();
@@ -192,14 +135,14 @@ bool findDXDevice(char* dev_name)
 
 	pFactory->Release();
 
-	if (!g_pCudaCapableAdapter)
+	if (!dxm.g_pCudaCapableAdapter)
 	{
 		printf("> Found 0 D3D11 Adapater(s) /w Compute capability.\n");
 		return false;
 	}
 
 	DXGI_ADAPTER_DESC adapterDesc;
-	g_pCudaCapableAdapter->GetDesc(&adapterDesc);
+	dxm.g_pCudaCapableAdapter->GetDesc(&adapterDesc);
 	wcstombs(dev_name, adapterDesc.Description, 128);
 
 	printf("> Found 1 D3D11 Adapater(s) /w Compute capability.\n");
@@ -241,36 +184,36 @@ HRESULT InitD3D(HWND hWnd)
 	D3D_FEATURE_LEVEL flRes;
 	// Create device and swapchain
 	hr = sFnPtr_D3D11CreateDeviceAndSwapChain(
-		g_pCudaCapableAdapter,
+		dxm.g_pCudaCapableAdapter,
 		D3D_DRIVER_TYPE_UNKNOWN,//D3D_DRIVER_TYPE_HARDWARE,
-		NULL, //HMODULE Software
+		nullptr, //HMODULE Software
 		0, //UINT Flags
 		tour_fl, // D3D_FEATURE_LEVEL* pFeatureLevels
 		3, //FeatureLevels
 		D3D11_SDK_VERSION, //UINT SDKVersion
 		&sd, // DXGI_SWAP_CHAIN_DESC* pSwapChainDesc
-		&g_pSwapChain, //IDXGISwapChain** ppSwapChain
-		&g_pd3dDevice, //ID3D11Device** ppDevice
+		&dxm.g_pSwapChain, //IDXGISwapChain** ppSwapChain
+		&dxm.g_pd3dDevice, //ID3D11Device** ppDevice
 		&flRes, //D3D_FEATURE_LEVEL* pFeatureLevel
-		&g_pd3dDeviceContext//ID3D11DeviceContext** ppImmediateContext
+		&dxm.g_pd3dDeviceContext//ID3D11DeviceContext** ppImmediateContext
 	);
 	AssertOrQuit(SUCCEEDED(hr));
 
-	g_pCudaCapableAdapter->Release();
+	dxm.g_pCudaCapableAdapter->Release();
 
 	// Get the immediate DeviceContext
-	g_pd3dDevice->GetImmediateContext(&g_pd3dDeviceContext);
+	dxm.g_pd3dDevice->GetImmediateContext(&dxm.g_pd3dDeviceContext);
 
 	// Create a render target view of the swapchain
 	ID3D11Texture2D* pBuffer;
-	hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBuffer);
+	hr = dxm.g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBuffer);
 	AssertOrQuit(SUCCEEDED(hr));
 
-	hr = g_pd3dDevice->CreateRenderTargetView(pBuffer, NULL, &g_pSwapChainRTV);
+	hr = dxm.g_pd3dDevice->CreateRenderTargetView(pBuffer, nullptr, &dxm.g_pSwapChainRTV);
 	AssertOrQuit(SUCCEEDED(hr));
 	pBuffer->Release();
 
-	g_pd3dDeviceContext->OMSetRenderTargets(1, &g_pSwapChainRTV, NULL);
+	dxm.g_pd3dDeviceContext->OMSetRenderTargets(1, &dxm.g_pSwapChainRTV, nullptr);
 
 	// Setup the viewport
 	D3D11_VIEWPORT vp;
@@ -280,14 +223,14 @@ HRESULT InitD3D(HWND hWnd)
 	vp.MaxDepth = 1.0f;
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
-	g_pd3dDeviceContext->RSSetViewports(1, &vp);
+	dxm.g_pd3dDeviceContext->RSSetViewports(1, &vp);
 
 
 	ID3DBlob* pShader;
 	ID3DBlob* pErrorMsgs;
 	// Vertex shader
 	{
-		hr = D3DCompile(g_simpleShaders, strlen(g_simpleShaders), "Memory", NULL, NULL, "VS", "vs_4_0", 0/*Flags1*/, 0/*Flags2*/, &pShader, &pErrorMsgs);
+		hr = D3DCompile(dxm.g_simpleShaders, strlen(dxm.g_simpleShaders), "Memory", nullptr, nullptr, "VS", "vs_4_0", 0/*Flags1*/, 0/*Flags2*/, &pShader, &pErrorMsgs);
 
 		if (FAILED(hr))
 		{
@@ -296,21 +239,21 @@ HRESULT InitD3D(HWND hWnd)
 		}
 
 		AssertOrQuit(SUCCEEDED(hr));
-		hr = g_pd3dDevice->CreateVertexShader(pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &g_pVertexShader);
+		hr = dxm.g_pd3dDevice->CreateVertexShader(pShader->GetBufferPointer(), pShader->GetBufferSize(), nullptr, &dxm.g_pVertexShader);
 		AssertOrQuit(SUCCEEDED(hr));
 		// Let's bind it now : no other vtx shader will replace it...
-		g_pd3dDeviceContext->VSSetShader(g_pVertexShader, NULL, 0);
-		//hr = g_pd3dDevice->CreateInputLayout(...pShader used for signature...) No need
+		dxm.g_pd3dDeviceContext->VSSetShader(dxm.g_pVertexShader, nullptr, 0);
+		//hr = dxm.g_pd3dDevice->CreateInputLayout(...pShader used for signature...) No need
 	}
 	// Pixel shader
 	{
-		hr = D3DCompile(g_simpleShaders, strlen(g_simpleShaders), "Memory", NULL, NULL, "PS", "ps_4_0", 0/*Flags1*/, 0/*Flags2*/, &pShader, &pErrorMsgs);
+		hr = D3DCompile(dxm.g_simpleShaders, strlen(dxm.g_simpleShaders), "Memory", nullptr, nullptr, "PS", "ps_4_0", 0/*Flags1*/, 0/*Flags2*/, &pShader, &pErrorMsgs);
 
 		AssertOrQuit(SUCCEEDED(hr));
-		hr = g_pd3dDevice->CreatePixelShader(pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &g_pPixelShader);
+		hr = dxm.g_pd3dDevice->CreatePixelShader(pShader->GetBufferPointer(), pShader->GetBufferSize(), nullptr, &dxm.g_pPixelShader);
 		AssertOrQuit(SUCCEEDED(hr));
 		// Let's bind it now : no other pix shader will replace it...
-		g_pd3dDeviceContext->PSSetShader(g_pPixelShader, NULL, 0);
+		dxm.g_pd3dDeviceContext->PSSetShader(dxm.g_pPixelShader, nullptr, 0);
 	}
 	// Create the constant buffer
 	{
@@ -321,11 +264,11 @@ HRESULT InitD3D(HWND hWnd)
 		cbDesc.MiscFlags = 0;
 		cbDesc.ByteWidth = 16 * ((sizeof(ConstantBuffer) + 16) / 16);
 		//cbDesc.StructureByteStride = 0;
-		hr = g_pd3dDevice->CreateBuffer(&cbDesc, NULL, &g_pConstantBuffer);
+		hr = dxm.g_pd3dDevice->CreateBuffer(&cbDesc, nullptr, &dxm.g_pConstantBuffer);
 		AssertOrQuit(SUCCEEDED(hr));
 		// Assign the buffer now : nothing in the code will interfere with this (very simple sample)
-		g_pd3dDeviceContext->VSSetConstantBuffers(0, 1, &g_pConstantBuffer);
-		g_pd3dDeviceContext->PSSetConstantBuffers(0, 1, &g_pConstantBuffer);
+		dxm.g_pd3dDeviceContext->VSSetConstantBuffers(0, 1, &dxm.g_pConstantBuffer);
+		dxm.g_pd3dDeviceContext->PSSetConstantBuffers(0, 1, &dxm.g_pConstantBuffer);
 	}
 	// SamplerState
 	{
@@ -338,14 +281,14 @@ HRESULT InitD3D(HWND hWnd)
 		sDesc.MaxLOD = 8;
 		sDesc.MipLODBias = 0;
 		sDesc.MaxAnisotropy = 1;
-		hr = g_pd3dDevice->CreateSamplerState(&sDesc, &g_pSamplerState);
+		hr = dxm.g_pd3dDevice->CreateSamplerState(&sDesc, &dxm.g_pSamplerState);
 		AssertOrQuit(SUCCEEDED(hr));
-		g_pd3dDeviceContext->PSSetSamplers(0, 1, &g_pSamplerState);
+		dxm.g_pd3dDeviceContext->PSSetSamplers(0, 1, &dxm.g_pSamplerState);
 	}
 
 	// Setup  no Input Layout
-	g_pd3dDeviceContext->IASetInputLayout(0);
-	g_pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	dxm.g_pd3dDeviceContext->IASetInputLayout(0);
+	dxm.g_pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	D3D11_RASTERIZER_DESC rasterizerState;
 	rasterizerState.FillMode = D3D11_FILL_SOLID;
@@ -358,8 +301,8 @@ HRESULT InitD3D(HWND hWnd)
 	rasterizerState.ScissorEnable = false;
 	rasterizerState.MultisampleEnable = false;
 	rasterizerState.AntialiasedLineEnable = false;
-	g_pd3dDevice->CreateRasterizerState(&rasterizerState, &g_pRasterState);
-	g_pd3dDeviceContext->RSSetState(g_pRasterState);
+	dxm.g_pd3dDevice->CreateRasterizerState(&rasterizerState, &dxm.g_pRasterState);
+	dxm.g_pd3dDeviceContext->RSSetState(dxm.g_pRasterState);
 
 	return S_OK;
 }
@@ -389,18 +332,18 @@ HRESULT InitTextures()
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		if (FAILED(g_pd3dDevice->CreateTexture2D(&desc, NULL, &g_texture_2d.pTexture)))
+		if (FAILED(dxm.g_pd3dDevice->CreateTexture2D(&desc, nullptr, &g_texture_2d.pTexture)))
 		{
 			return E_FAIL;
 		}
 
-		if (FAILED(g_pd3dDevice->CreateShaderResourceView(g_texture_2d.pTexture, NULL, &g_texture_2d.pSRView)))
+		if (FAILED(dxm.g_pd3dDevice->CreateShaderResourceView(g_texture_2d.pTexture, nullptr, &g_texture_2d.pSRView)))
 		{
 			return E_FAIL;
 		}
 
 		g_texture_2d.offsetInShader = 0; // to be clean we should look for the offset from the shader code
-		g_pd3dDeviceContext->PSSetShaderResources(g_texture_2d.offsetInShader, 1, &g_texture_2d.pSRView);
+		dxm.g_pd3dDeviceContext->PSSetShaderResources(g_texture_2d.offsetInShader, 1, &g_texture_2d.pSRView);
 	}
 
 	return S_OK;
@@ -430,7 +373,7 @@ bool DrawScene()
 {
 	// Clear the backbuffer to a black color
 	float ClearColor[4] = { 0.5f, 0.5f, 0.6f, 1.0f };
-	g_pd3dDeviceContext->ClearRenderTargetView(g_pSwapChainRTV, ClearColor);
+	dxm.g_pd3dDeviceContext->ClearRenderTargetView(dxm.g_pSwapChainRTV, ClearColor);
 
 	float quadRect[4] = { -1,  -1,  2 , 2 };
 	//
@@ -439,17 +382,17 @@ bool DrawScene()
 	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	ConstantBuffer* pcb;
-	hr = g_pd3dDeviceContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	hr = dxm.g_pd3dDeviceContext->Map(dxm.g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	AssertOrQuit(SUCCEEDED(hr));
 	pcb = (ConstantBuffer*)mappedResource.pData;
 	{
 		memcpy(pcb->vQuadRect, quadRect, sizeof(float) * 4);
 	}
-	g_pd3dDeviceContext->Unmap(g_pConstantBuffer, 0);
-	g_pd3dDeviceContext->Draw(4, 0);
+	dxm.g_pd3dDeviceContext->Unmap(dxm.g_pConstantBuffer, 0);
+	dxm.g_pd3dDeviceContext->Draw(4, 0);
 
 	// Present the backbuffer contents to the display
-	g_pSwapChain->Present(0, 0);
+	dxm.g_pSwapChain->Present(0, 0);
 	return true;
 }
 
@@ -469,29 +412,27 @@ void Cleanup()
 		g_texture_2d.pSRView->Release();
 		g_texture_2d.pTexture->Release();
 
-		if (g_pInputLayout != NULL)
-			g_pInputLayout->Release();
 
-		if (g_pVertexShader)
-			g_pVertexShader->Release();
+		if (dxm.g_pVertexShader)
+			dxm.g_pVertexShader->Release();
 
-		if (g_pPixelShader)
-			g_pPixelShader->Release();
+		if (dxm.g_pPixelShader)
+			dxm.g_pPixelShader->Release();
 
-		if (g_pConstantBuffer)
-			g_pConstantBuffer->Release();
+		if (dxm.g_pConstantBuffer)
+			dxm.g_pConstantBuffer->Release();
 
-		if (g_pSamplerState)
-			g_pSamplerState->Release();
+		if (dxm.g_pSamplerState)
+			dxm.g_pSamplerState->Release();
 
-		if (g_pSwapChainRTV != NULL)
-			g_pSwapChainRTV->Release();
+		if (dxm.g_pSwapChainRTV != nullptr)
+			dxm.g_pSwapChainRTV->Release();
 
-		if (g_pSwapChain != NULL)
-			g_pSwapChain->Release();
+		if (dxm.g_pSwapChain != nullptr)
+			dxm.g_pSwapChain->Release();
 
-		if (g_pd3dDevice != NULL)
-			g_pd3dDevice->Release();
+		if (dxm.g_pd3dDevice != nullptr)
+			dxm.g_pd3dDevice->Release();
 	}
 }
 
@@ -535,7 +476,7 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_PAINT:
-		ValidateRect(hWnd, NULL);
+		ValidateRect(hWnd, nullptr);
 		return 0;
 	}
 
@@ -575,8 +516,8 @@ int main(int argc, char* argv[])
 	//
 	// Register the window class
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
-					  GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
-					  "CUDA SDK", NULL
+					  GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr,
+					  "CUDA SDK", nullptr
 	};
 	RegisterClassEx(&wc);
 
@@ -586,7 +527,7 @@ int main(int argc, char* argv[])
 	int yBorder = ::GetSystemMetrics(SM_CYSIZEFRAME);
 	HWND hWnd = CreateWindow(wc.lpszClassName, "CUDA/D3D11 Texture InterOP",
 		WS_OVERLAPPEDWINDOW, 0, 0, g_WindowWidth + 2 * xBorder, g_WindowHeight + 2 * yBorder + yMenu,
-		NULL, NULL, wc.hInstance, NULL);
+		nullptr, nullptr, wc.hInstance, nullptr);
 
 
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
@@ -625,7 +566,7 @@ int main(int argc, char* argv[])
 
 		while (msg.message != WM_QUIT)
 		{
-			if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+			if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
