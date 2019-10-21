@@ -1,11 +1,5 @@
 #include "DXManager.h"
 
-#define AssertOrQuit(x) \
-    if (!(x)) \
-    { \
-        fprintf(stdout, "Assert unsatisfied in %s at %s:%d\n", __FUNCTION__, __FILE__, __LINE__); \
-        return 1; \
-    }
 
 const char DXManager::g_simpleShaders[] = " \n" \
 "cbuffer cbuf  \n" \
@@ -74,6 +68,35 @@ bool DXManager::DrawScene()
 	// Present the backbuffer contents to the display
 	g_pSwapChain->Present(0, 0);
 	return true;
+}
+
+HRESULT DXManager::InitTextures()
+{
+	D3D11_TEXTURE2D_DESC desc;
+	ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	if (FAILED(g_pd3dDevice->CreateTexture2D(&desc, nullptr, &pTexture)))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(g_pd3dDevice->CreateShaderResourceView(pTexture, nullptr, &pSRView)))
+	{
+		return E_FAIL;
+	}
+
+	offsetInShader = 0; // to be clean we should look for the offset from the shader code
+	g_pd3dDeviceContext->PSSetShaderResources(offsetInShader, 1, &pSRView);
+
+	return S_OK;
 }
 
 void DXManager::Cleanup()
