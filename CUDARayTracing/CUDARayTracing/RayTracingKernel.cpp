@@ -70,3 +70,41 @@ void RayTracingKernel::InitSpheres() {
 
 	free(h_spheres);
 }
+
+
+bool RayTracingKernel::findCUDADevice()
+{
+	int deviceCount = 0;
+	char devname[NAME_LEN];
+
+	// This function call returns 0 if there are no CUDA capable devices.
+	cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
+
+	if (error_id != cudaSuccess)
+	{
+		printf("cudaGetDeviceCount returned %d\n-> %s\n", (int)error_id, cudaGetErrorString(error_id));
+		exit(EXIT_FAILURE);
+	}
+
+	if (deviceCount == 0)
+	{
+		printf("> There are no device(s) supporting CUDA\n");
+		return false;
+	}
+	else
+	{
+		printf("> Found %d CUDA Capable Device(s)\n", deviceCount);
+	}
+
+	// Get CUDA device properties
+	cudaDeviceProp deviceProp;
+
+	for (int dev = 0; dev < deviceCount; ++dev)
+	{
+		cudaGetDeviceProperties(&deviceProp, dev);
+		STRCPY(devname, NAME_LEN, deviceProp.name);
+		printf("> GPU %d: %s\n", dev, devname);
+	}
+
+	return true;
+}
