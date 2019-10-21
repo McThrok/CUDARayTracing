@@ -53,3 +53,20 @@ void RayTracingKernel::Cleanup()
 	checkCudaErrors(cudaFree(cudaLinearMemory));
 	checkCudaErrors(cudaFree(spheres));
 }
+
+void RayTracingKernel::InitSpheres() {
+	spheres_num = 1;
+
+	unsigned int mem_size = sizeof(float) * 4 * spheres_num;
+	float* h_spheres = (float*)malloc(mem_size);
+
+	h_spheres[0] = 0;
+	h_spheres[1] = 0;
+	h_spheres[2] = 0;
+	h_spheres[3] = 0.5f;
+
+	checkCudaErrors(cudaMalloc((void**)&spheres, mem_size));
+	checkCudaErrors(cudaMemcpy(spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
+
+	free(h_spheres);
+}

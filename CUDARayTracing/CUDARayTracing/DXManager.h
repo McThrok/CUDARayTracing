@@ -22,6 +22,14 @@ struct ConstantBuffer
 class DXManager
 {
 public:
+	int width;
+	int height;
+
+	// Data structure for 2D texture shared between DX10 and CUDA
+	ID3D11Texture2D* pTexture;
+	ID3D11ShaderResourceView* pSRView;
+	int offsetInShader;
+
 	IDXGIAdapter* g_pCudaCapableAdapter = nullptr;  // Adapter to use
 	ID3D11Device* g_pd3dDevice = nullptr; // Our rendering device
 	ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;

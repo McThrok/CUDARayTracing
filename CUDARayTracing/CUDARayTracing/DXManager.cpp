@@ -78,24 +78,28 @@ bool DXManager::DrawScene()
 
 void DXManager::Cleanup()
 {
-		if (g_pVertexShader)
-			g_pVertexShader->Release();
+	// release the resources we created
+	pSRView->Release();
+	pTexture->Release();
 
-		if (g_pPixelShader)
-			g_pPixelShader->Release();
+	if (g_pVertexShader)
+		g_pVertexShader->Release();
 
-		if (g_pConstantBuffer)
-			g_pConstantBuffer->Release();
+	if (g_pPixelShader)
+		g_pPixelShader->Release();
 
-		if (g_pSamplerState)
-			g_pSamplerState->Release();
+	if (g_pConstantBuffer)
+		g_pConstantBuffer->Release();
 
-		if (g_pSwapChainRTV != nullptr)
-			g_pSwapChainRTV->Release();
+	if (g_pSamplerState)
+		g_pSamplerState->Release();
 
-		if (g_pSwapChain != nullptr)
-			g_pSwapChain->Release();
+	if (g_pSwapChainRTV != nullptr)
+		g_pSwapChainRTV->Release();
 
-		if (g_pd3dDevice != nullptr)
-			g_pd3dDevice->Release();
+	if (g_pSwapChain != nullptr)
+		g_pSwapChain->Release();
+
+	if (g_pd3dDevice != nullptr)
+		g_pd3dDevice->Release();
 }

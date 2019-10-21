@@ -17,9 +17,6 @@
 #include "DXManager.h"
 
 
-//-----------------------------------------------------------------------------
-// Global variables
-//-----------------------------------------------------------------------------
 RayTracingKernel rtk;
 DXManager dxm;
 
@@ -38,14 +35,6 @@ bool g_bDone = false;
 const unsigned int g_WindowWidth = 1280;
 const unsigned int g_WindowHeight = 720;
 
-// Data structure for 2D texture shared between DX10 and CUDA
-struct
-{
-	ID3D11Texture2D* pTexture;
-	ID3D11ShaderResourceView* pSRView;
-	int offsetInShader;
-
-} g_texture_2d;
 
 #define NAME_LEN    512
 
@@ -89,10 +78,6 @@ bool findCUDADevice()
 }
 
 
-//-----------------------------------------------------------------------------
-// Name: InitD3D()
-// Desc: Initializes Direct3D
-//-----------------------------------------------------------------------------
 HRESULT InitD3D(HWND hWnd)
 {
 	HRESULT hr = S_OK;
@@ -102,8 +87,8 @@ HRESULT InitD3D(HWND hWnd)
 	DXGI_SWAP_CHAIN_DESC sd;
 	ZeroMemory(&sd, sizeof(sd));
 	sd.BufferCount = 1;
-	sd.BufferDesc.Width = g_WindowWidth;
-	sd.BufferDesc.Height = g_WindowHeight;
+	sd.BufferDesc.Width = dxm.width;
+	sd.BufferDesc.Height = dxm.height;
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
@@ -155,8 +140,8 @@ HRESULT InitD3D(HWND hWnd)
 
 	// Setup the viewport
 	D3D11_VIEWPORT vp;
-	vp.Width = g_WindowWidth;
-	vp.Height = g_WindowHeight;
+	vp.Width = dxm.width;
+	vp.Height = dxm.height;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 	vp.TopLeftX = 0;
@@ -245,10 +230,6 @@ HRESULT InitD3D(HWND hWnd)
 	return S_OK;
 }
 
-//-----------------------------------------------------------------------------
-// Name: InitTextures()
-// Desc: Initializes Direct3D Textures (allocation and initialization)
-//-----------------------------------------------------------------------------
 HRESULT InitTextures()
 {
 	//
@@ -270,45 +251,25 @@ HRESULT InitTextures()
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		if (FAILED(dxm.g_pd3dDevice->CreateTexture2D(&desc, nullptr, &g_texture_2d.pTexture)))
+		if (FAILED(dxm.g_pd3dDevice->CreateTexture2D(&desc, nullptr, &dxm.pTexture)))
 		{
 			return E_FAIL;
 		}
 
-		if (FAILED(dxm.g_pd3dDevice->CreateShaderResourceView(g_texture_2d.pTexture, nullptr, &g_texture_2d.pSRView)))
+		if (FAILED(dxm.g_pd3dDevice->CreateShaderResourceView(dxm.pTexture, nullptr, &dxm.pSRView)))
 		{
 			return E_FAIL;
 		}
 
-		g_texture_2d.offsetInShader = 0; // to be clean we should look for the offset from the shader code
-		dxm.g_pd3dDeviceContext->PSSetShaderResources(g_texture_2d.offsetInShader, 1, &g_texture_2d.pSRView);
+		dxm.offsetInShader = 0; // to be clean we should look for the offset from the shader code
+		dxm.g_pd3dDeviceContext->PSSetShaderResources(dxm.offsetInShader, 1, &dxm.pSRView);
 	}
 
 	return S_OK;
 }
 
-void InitSpheres() {
-	rtk.spheres_num = 1;
-
-	unsigned int mem_size = sizeof(float) * 4 * rtk.spheres_num;
-	float* h_spheres = (float*)malloc(mem_size);
-
-	h_spheres[0] = 0;
-	h_spheres[1] = 0;
-	h_spheres[2] = 0;
-	h_spheres[3] = 0.5f;
-
-	checkCudaErrors(cudaMalloc((void**)&rtk.spheres, mem_size));
-	checkCudaErrors(cudaMemcpy(rtk.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
-
-	free(h_spheres);
-}
 
 
-//-----------------------------------------------------------------------------
-// Name: Cleanup()
-// Desc: Releases all previously initialized objects
-//-----------------------------------------------------------------------------
 void Cleanup()
 {
 	//
@@ -317,18 +278,11 @@ void Cleanup()
 	rtk.Cleanup();
 
 	{
-		// release the resources we created
-		g_texture_2d.pSRView->Release();
-		g_texture_2d.pTexture->Release();
 
 		dxm.Cleanup();
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Name: Render()
-// Desc: Launches the CUDA kernels to fill in the texture data
-//-----------------------------------------------------------------------------
 void Render()
 {
 	rtk.Run();
@@ -336,10 +290,6 @@ void Render()
 	dxm.DrawScene();
 }
 
-//-----------------------------------------------------------------------------
-// Name: MsgProc()
-// Desc: The window's message handler
-//-----------------------------------------------------------------------------
 static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -369,9 +319,6 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Program main
-////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
 	char device_name[256];
@@ -419,15 +366,18 @@ int main(int argc, char* argv[])
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 	UpdateWindow(hWnd);
 
+	dxm.width = g_WindowWidth;
+	dxm.height = g_WindowHeight;
+
 	// Initialize Direct3D
 	if (SUCCEEDED(InitD3D(hWnd)) &&
 		SUCCEEDED(InitTextures()))
 	{
-		InitSpheres();
+		rtk.InitSpheres();
 		// 2D
 		// register the Direct3D resources that we'll use
 		// we'll read to and write from g_texture_2d, so don't set any special map flags for it
-		cudaGraphicsD3D11RegisterResource(&rtk.cudaResource, g_texture_2d.pTexture, cudaGraphicsRegisterFlagsNone);
+		cudaGraphicsD3D11RegisterResource(&rtk.cudaResource, dxm.pTexture, cudaGraphicsRegisterFlagsNone);
 		getLastCudaError("cudaGraphicsD3D11RegisterResource (g_texture_2d) failed");
 		// cuda cannot write into the texture directly : the texture is seen as a cudaArray and can only be mapped as a texture
 		// Create a buffer so that cuda can write into it

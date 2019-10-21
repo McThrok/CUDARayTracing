@@ -26,5 +26,6 @@ public:
 
 	void Run();
 	void Cleanup();
+	void InitSpheres();
 };
 
