@@ -20,17 +20,20 @@
 RayTracingKernel rtk;
 DXManager dxm;
 
+HWND hWnd;
+WNDCLASSEX wc;
+
 bool g_bDone = false;
 
 const unsigned int g_WindowWidth = 1280;
 const unsigned int g_WindowHeight = 720;
 
-#define NAME_LEN    512
-
 void Cleanup()
 {
 	rtk.Cleanup();
 	dxm.Cleanup();
+
+	UnregisterClass(wc.lpszClassName, wc.hInstance);
 }
 
 void Render()
@@ -39,7 +42,34 @@ void Render()
 	dxm.DrawScene();
 }
 
-static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void Run() {
+	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	UpdateWindow(hWnd);
+
+	while (false == g_bDone)
+	{
+		Render();
+
+		MSG msg;
+		ZeroMemory(&msg, sizeof(msg));
+
+		while (msg.message != WM_QUIT)
+		{
+			if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			else
+			{
+				Render();
+			}
+		}
+
+	};
+}
+
+LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
@@ -68,15 +98,8 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-int main(int argc, char* argv[])
-{
-	if (!rtk.findCUDADevice())                   // Search for CUDA GPU
-		exit(EXIT_SUCCESS);
-
-	if (!dxm.findDXDevice())           // Search for D3D Hardware Device
-		exit(EXIT_SUCCESS);
-
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
+void InitWindow() {
+	wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
 					  GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr,
 					  "CUDA SDK", nullptr
 	};
@@ -86,13 +109,21 @@ int main(int argc, char* argv[])
 	int xBorder = ::GetSystemMetrics(SM_CXSIZEFRAME);
 	int yMenu = ::GetSystemMetrics(SM_CYMENU);
 	int yBorder = ::GetSystemMetrics(SM_CYSIZEFRAME);
-	HWND hWnd = CreateWindow(wc.lpszClassName, "CUDA/D3D11 Texture InterOP",
+	hWnd = CreateWindow(wc.lpszClassName, "CUDA/D3D11 Texture InterOP",
 		WS_OVERLAPPEDWINDOW, 0, 0, g_WindowWidth + 2 * xBorder, g_WindowHeight + 2 * yBorder + yMenu,
 		nullptr, nullptr, wc.hInstance, nullptr);
+}
 
 
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
-	UpdateWindow(hWnd);
+int main(int argc, char* argv[])
+{
+	InitWindow();
+
+	if (!rtk.findCUDADevice())                   // Search for CUDA GPU
+		exit(EXIT_SUCCESS);
+
+	if (!dxm.findDXDevice())           // Search for D3D Hardware Device
+		exit(EXIT_SUCCESS);
 
 	dxm.width = g_WindowWidth;
 	dxm.height = g_WindowHeight;
@@ -116,36 +147,7 @@ int main(int argc, char* argv[])
 		cudaMemset(rtk.cudaLinearMemory, 1, rtk.pitch * rtk.height);
 	}
 
-	//
-	// the main loop
-	//
-	while (false == g_bDone)
-	{
-		Render();
-
-		//
-		// handle I/O
-		//
-		MSG msg;
-		ZeroMemory(&msg, sizeof(msg));
-
-		while (msg.message != WM_QUIT)
-		{
-			if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			else
-			{
-				Render();
-			}
-		}
-
-	};
-
-	// Unregister windows class
-	UnregisterClass(wc.lpszClassName, wc.hInstance);
+	Run();
 
 
 	exit(EXIT_SUCCESS);
