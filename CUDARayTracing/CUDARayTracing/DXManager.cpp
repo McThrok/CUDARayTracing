@@ -273,6 +273,23 @@ HRESULT DXManager::InitD3D(HWND hWnd)
 
 }
 
+bool DXManager::Init(HWND hWnd, int width, int height)
+{
+	this->width = width;
+	this->height = height;
+
+	if (!findDXDevice()) // Search for D3D Hardware Device
+		return false;
+
+	if (!SUCCEEDED(InitD3D(hWnd)))
+		return false;
+
+	if (!SUCCEEDED(InitTextures()))
+		return false;
+
+	return true;
+}
+
 bool DXManager::DrawScene()
 {
 	// Clear the backbuffer to a black color
@@ -328,6 +345,7 @@ HRESULT DXManager::InitTextures()
 
 	return S_OK;
 }
+
 
 void DXManager::Cleanup()
 {

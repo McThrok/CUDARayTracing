@@ -54,6 +54,7 @@ public:
 	ID3D11SamplerState* g_pSamplerState;
 
 	HRESULT InitTextures();
+	bool Init(HWND hWnd, int width, int height);
 	void Cleanup();
 	bool DrawScene();
 

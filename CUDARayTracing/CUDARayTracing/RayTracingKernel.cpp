@@ -59,9 +59,9 @@ void RayTracingKernel::RunCPU()
 		for (int y = 0; y < height; y++)
 		{
 			float* pixel = colors + sizeof(float) * (y + x * height);
-			pixel[0] = 1.0f;// 0.0 * x / width;
-			pixel[1] = 1.0f;// 0.0 * y / height; // green
-			pixel[2] = 1.0f; // blue
+			pixel[0] = 0.2f;// 0.0 * x / width;
+			pixel[1] = 0.8f;// 0.0 * y / height; // green
+			pixel[2] = 0.2f; // blue
 			pixel[3] = 1.0f; // alpha
 		}
 	}
