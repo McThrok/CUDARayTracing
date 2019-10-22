@@ -1,3 +1,6 @@
+#include "cuda_runtime.h" //for intellisense
+#include "device_launch_parameters.h" //for intellisense
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
