@@ -23,16 +23,24 @@ public:
 	int spheres_num;
 	int width;
 	int height;
+	bool cpu;
 	size_t pitch;
 
 	void* cudaLinearMemory;
 	float* colors;
 
-	bool findCUDADevice();
 
 	void Run();
+	bool Init(int width, int height, bool cpu = false);
+	void RegisterTexture(ID3D11Texture2D* texture);
 	void Cleanup();
+
+private:
+	bool findCUDADevice();
 	void InitSpheres();
+
+	//GPU
+	void RunGPU();
 
 	//CPU
 	void InitCPU();

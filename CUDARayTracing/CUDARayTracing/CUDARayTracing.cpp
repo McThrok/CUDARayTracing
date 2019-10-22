@@ -38,8 +38,7 @@ void Cleanup()
 
 void Render()
 {
-	//rtk.Run();
-	rtk.RunCPU();
+	rtk.Run();
 	dxm.DrawScene();
 }
 
@@ -120,28 +119,14 @@ int main(int argc, char* argv[])
 {
 	InitWindow();
 
-	if (!rtk.findCUDADevice())                   // Search for CUDA GPU
+	if (!rtk.Init(g_WindowWidth, g_WindowHeight,true))
 		exit(EXIT_SUCCESS);
 
-	if (!dxm.Init(hWnd, g_WindowWidth, g_WindowHeight))           // Search for D3D Hardware Device
+	if (!dxm.Init(hWnd, g_WindowWidth, g_WindowHeight))
 		exit(EXIT_SUCCESS);
 
-	rtk.width = g_WindowWidth;
-	rtk.height = g_WindowHeight;
+	rtk.RegisterTexture(dxm.pTexture);
 
-	rtk.InitSpheres();
-	rtk.InitCPU();
-	// 2D
-	// register the Direct3D resources that we'll use
-	// we'll read to and write from g_texture_2d, so don't set any special map flags for it
-	cudaGraphicsD3D11RegisterResource(&rtk.cudaResource, dxm.pTexture, cudaGraphicsRegisterFlagsNone);
-	getLastCudaError("cudaGraphicsD3D11RegisterResource (g_texture_2d) failed");
-	// cuda cannot write into the texture directly : the texture is seen as a cudaArray and can only be mapped as a texture
-	// Create a buffer so that cuda can write into it
-	// pixel fmt is DXGI_FORMAT_R32G32B32A32_FLOAT
-	cudaMallocPitch(&rtk.cudaLinearMemory, &rtk.pitch, rtk.width * sizeof(float) * 4, rtk.height);
-	getLastCudaError("cudaMallocPitch (g_texture_2d) failed");
-	cudaMemset(rtk.cudaLinearMemory, 1, rtk.pitch * rtk.height);
 
 	Run();
 

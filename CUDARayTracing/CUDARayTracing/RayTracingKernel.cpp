@@ -8,6 +8,14 @@ extern "C"
 
 void RayTracingKernel::Run()
 {
+	if (cpu)
+		RunCPU();
+	else
+		RunGPU();
+}
+
+void RayTracingKernel::RunGPU()
+{
 	//
 	// map the resources we've registered so we can access them in Cuda
 	// - it is most efficient to map and unmap all resources in a single call,
@@ -18,34 +26,58 @@ void RayTracingKernel::Run()
 	cudaGraphicsMapResources(1, &cudaResource, 0);
 	getLastCudaError("cudaGraphicsMapResources(1) failed");
 
-	//
-	// run kernels which will populate the contents of those textures
-	//
-	// populate the 2d texture
-	{
-		cudaArray* cuArray;
-		cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
-		getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
+	cudaArray* cuArray;
+	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
+	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
-		// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-		cuda_texture_2d(cudaLinearMemory, width, height, pitch, spheres, spheres_num);
-		getLastCudaError("cuda_texture_2d failed");
+	// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
+	cuda_texture_2d(cudaLinearMemory, width, height, pitch, spheres, spheres_num);
+	getLastCudaError("cuda_texture_2d failed");
 
-		// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
-		cudaMemcpy2DToArray(
-			cuArray, // dst array
-			0, 0,    // offset
-			cudaLinearMemory, pitch,       // src
-			width * 4 * sizeof(float), height, // extent
-			cudaMemcpyDeviceToDevice); // kind
-		getLastCudaError("cudaMemcpy2DToArray failed");
-	}
+	// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
+	cudaMemcpy2DToArray(
+		cuArray, // dst array
+		0, 0,    // offset
+		cudaLinearMemory, pitch,       // src
+		width * 4 * sizeof(float), height, // extent
+		cudaMemcpyDeviceToDevice); // kind
+	getLastCudaError("cudaMemcpy2DToArray failed");
 
 	//
 	// unmap the resources
 	//
 	cudaGraphicsUnmapResources(1, &cudaResource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
+}
+
+bool RayTracingKernel::Init(int width, int height, bool cpu)
+{
+	this->width = width;
+	this->height = height;
+	this->cpu = cpu;
+
+	if (!findCUDADevice())
+		return false;
+
+	if (cpu)
+		InitCPU();
+
+	InitSpheres();
+
+	return true;
+}
+
+void RayTracingKernel::RegisterTexture(ID3D11Texture2D* texture)
+{
+	// 2D
+	// register the Direct3D resources that we'll use
+	// we'll read to and write from g_texture_2d, so don't set any special map flags for it
+	checkCudaErrors(cudaGraphicsD3D11RegisterResource(&cudaResource, texture, cudaGraphicsRegisterFlagsNone));
+	// cuda cannot write into the texture directly : the texture is seen as a cudaArray and can only be mapped as a texture
+	// Create a buffer so that cuda can write into it
+	// pixel fmt is DXGI_FORMAT_R32G32B32A32_FLOAT
+	checkCudaErrors(cudaMallocPitch(&cudaLinearMemory, &pitch, width * sizeof(float) * 4, height));
+	cudaMemset(cudaLinearMemory, 1, pitch * height);
 }
 
 void RayTracingKernel::InitCPU() {
@@ -116,7 +148,6 @@ void RayTracingKernel::InitSpheres() {
 
 	free(h_spheres);
 }
-
 
 bool RayTracingKernel::findCUDADevice()
 {
