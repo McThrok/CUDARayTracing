@@ -38,7 +38,8 @@ void Cleanup()
 
 void Render()
 {
-	rtk.Run();
+	//rtk.Run();
+	rtk.RunCPU();
 	dxm.DrawScene();
 }
 
@@ -134,6 +135,7 @@ int main(int argc, char* argv[])
 	if (SUCCEEDED(dxm.InitD3D(hWnd)) && SUCCEEDED(dxm.InitTextures()))
 	{
 		rtk.InitSpheres();
+		rtk.InitCPU();
 		// 2D
 		// register the Direct3D resources that we'll use
 		// we'll read to and write from g_texture_2d, so don't set any special map flags for it

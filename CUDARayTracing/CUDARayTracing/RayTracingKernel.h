@@ -26,11 +26,17 @@ public:
 	size_t pitch;
 
 	void* cudaLinearMemory;
+	float* colors;
 
-	bool RayTracingKernel::findCUDADevice();
+	bool findCUDADevice();
 
 	void Run();
 	void Cleanup();
 	void InitSpheres();
+
+	//CPU
+	void InitCPU();
+	void RunCPU();
+	void CopyToGPU();
 };
 

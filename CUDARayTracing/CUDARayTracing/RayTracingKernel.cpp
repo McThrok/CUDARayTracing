@@ -3,6 +3,7 @@
 extern "C"
 {
 	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float* spheres, int num_sphere);
+	bool cuda_copy_colors(void* surface, size_t width, size_t height, size_t pitch, float* colors);
 }
 
 void RayTracingKernel::Run()
@@ -43,6 +44,51 @@ void RayTracingKernel::Run()
 	//
 	// unmap the resources
 	//
+	cudaGraphicsUnmapResources(1, &cudaResource, 0);
+	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
+}
+
+void RayTracingKernel::InitCPU() {
+	colors = new float[width * height * 4];
+}
+
+void RayTracingKernel::RunCPU()
+{
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height; y++)
+		{
+			float* pixel = colors + sizeof(float) * (y + x * height);
+			pixel[0] = 1.0f;// 0.0 * x / width;
+			pixel[1] = 1.0f;// 0.0 * y / height; // green
+			pixel[2] = 1.0f; // blue
+			pixel[3] = 1.0f; // alpha
+		}
+	}
+
+	CopyToGPU();
+}
+
+void RayTracingKernel::CopyToGPU()
+{
+	cudaGraphicsMapResources(1, &cudaResource, 0);
+	getLastCudaError("cudaGraphicsMapResources(1) failed");
+
+	cudaArray* cuArray;
+	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
+	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
+
+	checkCudaErrors(cudaMemcpy(cudaLinearMemory, colors, width * height * 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
+	cudaMemcpy2DToArray(
+		cuArray, // dst array
+		0, 0,    // offset
+		cudaLinearMemory, pitch,       // src
+		width * 4 * sizeof(float), height, // extent
+		cudaMemcpyDeviceToDevice); // kind
+	getLastCudaError("cudaMemcpy2DToArray failed");
+
 	cudaGraphicsUnmapResources(1, &cudaResource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
 }
