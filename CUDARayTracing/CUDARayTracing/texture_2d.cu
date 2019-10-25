@@ -20,6 +20,7 @@ struct qwe {
 	__device__ void Test() {
 		a++;
 	}
+
 };
 
 __global__ void cuda_kernel_texture_2d(qwe q, unsigned char* surface, int width, int height, size_t pitch, float* spheres, int num_sphere)
@@ -39,6 +40,11 @@ __global__ void cuda_kernel_texture_2d(qwe q, unsigned char* surface, int width,
 	pixel[3] = 1; // alpha
 
 	q.Test();
+	vec3 a = vec3();
+	a.cross(a);
+	a.dot(a + 1);
+
+	//float c = a.length();
 
 	pixel[0] = q.c.x;
 }
