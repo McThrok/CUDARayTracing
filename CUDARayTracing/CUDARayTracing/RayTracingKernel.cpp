@@ -1,4 +1,5 @@
 #include "RayTracingKernel.h"
+#include "vec3.h"
 
 extern "C"
 {
@@ -87,8 +88,8 @@ void RayTracingKernel::InitCPU() {
 void RayTracingKernel::RunCPU()
 {
 	Camera c(1280, 720);
-	Sphere s({ 0,0,-5 }, 1, { 1,1,1,1 });
-	Sphere s2({ 0,0,5 }, 1, { 1,1,1,1 });
+	Sphere s({ 0.0f, 0.0f, -5.0f },  1.0f,  { 1.0f, 1.0f, 1.0f});
+	Sphere s2({ 0.0f, 0.0f, 5.0f },  1.0f,  { 1.0f, 1.0f, 1.0f});
 
 	for (int x = 0; x < width; x++)
 	{

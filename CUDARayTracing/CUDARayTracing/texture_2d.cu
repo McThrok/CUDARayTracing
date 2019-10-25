@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <DirectXMath.h>
+#include "vec3.h"
 
 #define PI 3.1415926536f
 
@@ -14,7 +15,7 @@ using namespace DirectX;
 struct qwe {
 	int a;
 	int b;
-	XMFLOAT3 c;
+	vec3 c;
 
 	__device__ void Test() {
 		a++;

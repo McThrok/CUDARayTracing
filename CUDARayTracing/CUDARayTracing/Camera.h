@@ -2,32 +2,31 @@
 
 #include <DirectXMath.h>
 #include <Ray.h>
+#include "vec3.h"
 
-#ifdef __CUDACC__
+/*#ifdef __CUDACC__
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #else
 #define CUDA_CALLABLE_MEMBER
-#endif 
+#endif*/ 
 
 using namespace DirectX;
 
 class Camera
 {
 public:
-	XMFLOAT3 position;
-	XMFLOAT3 up;
-	XMFLOAT3 forward;
+	vec3 position;
+	vec3 up;
+	vec3 forward;
 
 private:
-	XMMATRIX projection;
 	int width;
 	int height;
 	float aspect;
 	float fov;
 
 public:
-	CUDA_CALLABLE_MEMBER Camera(int screenWidth, int screenHeight);
+	Camera(int screenWidth, int screenHeight);
 	Ray CastScreenRay(int x, int y);
-	CUDA_CALLABLE_MEMBER Ray CastScreenRay2(int x, int y);
 };
 

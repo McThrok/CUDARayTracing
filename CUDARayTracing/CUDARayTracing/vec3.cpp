@@ -1,5 +1,4 @@
 #include "vec3.h"
-#pragma once
 
 vec3::vec3(const vec3& u)
 {
@@ -99,17 +98,22 @@ bool vec3::operator!=(const vec3& u) const
 }
 
 
-inline float vec3::dot(const vec3& u) const
+float vec3::dot(const vec3& u) const
 {
 	return x * u.x + y * u.y + z * u.z;
 }
 
-inline vec3 vec3::cross(const vec3& u) const
+vec3 vec3::cross(const vec3& u) const
 {
-	return vec3(y * u.z - z * u.y, z * u.x - x * u.z, x * u.y - y * u.x;
+	return vec3(y * u.z - z * u.y, z * u.x - x * u.z, x * u.y - y * u.x);
 }
 
-inline float vec3::length() const
+vec3 vec3::norm() const
+{
+	return vec3(*this) /= length();
+}
+
+float vec3::length() const
 {
 	return sqrt(x * x + y * y + z * z);
 }

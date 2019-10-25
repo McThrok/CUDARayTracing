@@ -1,24 +1,14 @@
 #pragma once
-
+#include "vec3.h"
 #include <DirectXMath.h>
 
 using namespace DirectX;
 
 class Ray {
 public:
-	XMFLOAT3 origin;
-	XMFLOAT3 direction;
+	vec3 origin;
+	vec3 direction;
 
-	//Ray();
-	//Ray(XMFLOAT3 origin, XMFLOAT3 direction) ;
-
-	Ray::Ray() {
-		origin = { 0,0,0 };
-		direction = { 1,0,0 };
-	}
-
-	Ray::Ray(XMFLOAT3 o, XMFLOAT3 d) {
-		origin = o;
-		direction = d;
-	}
+	Ray() :origin({ 0,0,0 }), direction({ 0,0,0 }) {	}
+	Ray(vec3 o, vec3 d) :origin(o), direction(d) {	}
 };

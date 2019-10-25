@@ -19,14 +19,8 @@ Ray Camera::CastScreenRay(int x, int y)
 	float xAngle = fov * (1.0f * x / width - 0.5f);
 	float yAngle = fov * (1.0f * y / height - 0.5f);
 
-	XMVECTOR right = XMVector3Cross(XMLoadFloat3(&forward), XMLoadFloat3(&up));
-	XMVECTOR up = XMLoadFloat3(&this->up);
-	XMFLOAT3 dir;
-	XMStoreFloat3(&dir, XMVector3Normalize(XMLoadFloat3(&forward) + right * sinf(xAngle) * aspect + up * sinf(yAngle)));
+	vec3 right = forward.cross(up);
+	vec3 dir= (forward + right * sinf(xAngle) * aspect + up * sinf(yAngle)).norm();
 
 	return Ray(position, dir);
-}
-Ray Camera::CastScreenRay2(int x, int y)
-{
-	return Ray({ 0,0,0 }, { 0,0,1 });
 }

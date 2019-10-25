@@ -2,26 +2,27 @@
 
 #include "math.h"
 #include "Ray.h"
+#include "vec3.h"
+
 #include <DirectXMath.h>
 
 using namespace DirectX;
 
 class Sphere {
 public:
-	XMFLOAT3 position;
+	vec3 position;
 	float radius;
-	XMFLOAT4 color;
+	vec3 color;
 
-	//Sphere();
-	//Sphere(XMFLOAT3 position, float radius, XMFLOAT4 color);
+	Sphere::Sphere() :position({ 0,0,0 }), radius(1.0f), color({ 0.5,0.5,0.5 }) {}
+
+	Sphere::Sphere(vec3 _position, float _radius, vec3 _color)
+		: position(_position), radius(_radius), color(_color) {}
 
 
-	XMFLOAT3 getNormalAt(XMFLOAT3 point) {
+	vec3 getNormalAt(vec3 point) {
 		// normal always points away from the center of a sphere
-		XMFLOAT3 normal;
-		XMStoreFloat3(&normal, XMVector3Normalize(XMLoadFloat3(&point) - XMLoadFloat3(&position)));
-
-		return normal;
+		return (point - position).norm();
 	}
 
 	float findIntersection(Ray ray) {
@@ -39,16 +40,5 @@ public:
 		return dist;
 	}
 
-	Sphere::Sphere() {
-		position = XMFLOAT3(0, 0, 0);
-		radius = 1.0;
-		color = { 0.5,0.5,0.5, 0 };
-	}
-
-	Sphere::Sphere(XMFLOAT3 position, float radius, XMFLOAT4 color) {
-		this->position = position;
-		this->radius = radius;
-		this->color = color;
-	}
 };
 
