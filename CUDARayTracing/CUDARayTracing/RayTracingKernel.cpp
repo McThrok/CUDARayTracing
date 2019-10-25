@@ -86,15 +86,30 @@ void RayTracingKernel::InitCPU() {
 
 void RayTracingKernel::RunCPU()
 {
+	Camera c(1280, 720);
+	Sphere s({ 0,0,-5 }, 1, { 1,1,1,1 });
+	Sphere s2({ 0,0,5 }, 1, { 1,1,1,1 });
+
 	for (int x = 0; x < width; x++)
 	{
 		for (int y = 0; y < height; y++)
 		{
-			float* pixel = colors + sizeof(float) * (y + x * height);
-			pixel[0] = 0.2f;// 0.0 * x / width;
-			pixel[1] = 0.8f;// 0.0 * y / height; // green
-			pixel[2] = 0.2f; // blue
+			float* pixel = colors + 4 * (x + y * width);//row major
+			Ray ray = c.CastScreenRay(x, y);
+
 			pixel[3] = 1.0f; // alpha
+			if (s.findIntersection(ray) > 0)
+			{
+				pixel[0] = 1.0f;// 0.0 * x / width;
+				pixel[1] = 0.0f;// 0.0 * y / height; // green
+				pixel[2] = 0.0f; // blue
+			}
+			else {
+				pixel[0] = 0.0f;// 0.0 * x / width;
+				pixel[1] = 1.0f;// 0.0 * y / height; // green
+				pixel[2] = 0.0f; // blue
+
+			}
 		}
 	}
 
@@ -148,6 +163,7 @@ void RayTracingKernel::InitSpheres() {
 
 	free(h_spheres);
 }
+
 
 bool RayTracingKernel::findCUDADevice()
 {

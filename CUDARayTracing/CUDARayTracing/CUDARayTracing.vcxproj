@@ -99,6 +99,7 @@
     <ClCompile Include="CUDARayTracing.cpp" />
     <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="RayTracingKernel.cpp" />
+    <ClCompile Include="vec3.cpp" />
     <CudaCompile Include="texture_2d.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -107,6 +108,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="RayTracingKernel.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

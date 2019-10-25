@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 {
 	InitWindow();
 
-	if (!rtk.Init(g_WindowWidth, g_WindowHeight,true))
+	if (!rtk.Init(g_WindowWidth, g_WindowHeight,false))
 		exit(EXIT_SUCCESS);
 
 	if (!dxm.Init(hWnd, g_WindowWidth, g_WindowHeight))

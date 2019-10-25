@@ -9,10 +9,12 @@
 
 #define PI 3.1415926536f
 
+using namespace DirectX;
+
 struct qwe {
 	int a;
 	int b;
-	DirectX::XMFLOAT3 c;
+	XMFLOAT3 c;
 
 	__device__ void Test() {
 		a++;
@@ -36,6 +38,7 @@ __global__ void cuda_kernel_texture_2d(qwe q, unsigned char* surface, int width,
 	pixel[3] = 1; // alpha
 
 	q.Test();
+
 	pixel[0] = q.c.x;
 }
 

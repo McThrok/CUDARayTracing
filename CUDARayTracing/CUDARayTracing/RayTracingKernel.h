@@ -13,7 +13,13 @@
 #include <helper_cuda.h>
 #include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
 
+#include <DirectXMath.h>
+#include "Camera.h"
+#include "Sphere.h"
+
 #define NAME_LEN 512
+
+using namespace DirectX;
 
 class RayTracingKernel
 {

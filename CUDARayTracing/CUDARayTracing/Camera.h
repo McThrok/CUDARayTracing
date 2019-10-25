@@ -1,6 +1,13 @@
 #pragma once
 
 #include <DirectXMath.h>
+#include <Ray.h>
+
+#ifdef __CUDACC__
+#define CUDA_CALLABLE_MEMBER __host__ __device__
+#else
+#define CUDA_CALLABLE_MEMBER
+#endif 
 
 using namespace DirectX;
 
@@ -13,16 +20,14 @@ public:
 
 private:
 	XMMATRIX projection;
+	int width;
+	int height;
+	float aspect;
+	float fov;
 
 public:
-	Camera(float aspect);
-	XMMATRIX GetView();
-	XMMATRIX GetProjection();
-	XMMATRIX GetViewProjection();
-
-	void SetAspect(float aspect);
-
-private:
-	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
+	CUDA_CALLABLE_MEMBER Camera(int screenWidth, int screenHeight);
+	Ray CastScreenRay(int x, int y);
+	CUDA_CALLABLE_MEMBER Ray CastScreenRay2(int x, int y);
 };
 

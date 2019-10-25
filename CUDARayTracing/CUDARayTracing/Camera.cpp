@@ -1,38 +1,32 @@
 #include "Camera.h"
 
-Camera::Camera(float aspect)
+Camera::Camera(int screenWidth, int screenHeight)
 {
 	//LH or RH?
 	up = { 0,1,0 };
 	forward = { 0,0,-1 };
 	position = { 0,0,0 };
 
-	SetAspect(aspect);
+	width = screenWidth;
+	height = screenHeight;
+	aspect = 1.0 * width / height;
+	fov = (90.f / 360.0f) * XM_2PI;
 }
 
-XMMATRIX Camera::GetView()
+Ray Camera::CastScreenRay(int x, int y)
 {
-	//LH or RH?
-	return XMMatrixLookToLH(XMLoadFloat3(&position), XMLoadFloat3(&forward), XMLoadFloat3(&up));
-}
+	//r=1
+	float xAngle = fov * (1.0f * x / width - 0.5f);
+	float yAngle = fov * (1.0f * y / height - 0.5f);
 
-XMMATRIX Camera::GetProjection()
-{
-	return projection;
-}
+	XMVECTOR right = XMVector3Cross(XMLoadFloat3(&forward), XMLoadFloat3(&up));
+	XMVECTOR up = XMLoadFloat3(&this->up);
+	XMFLOAT3 dir;
+	XMStoreFloat3(&dir, XMVector3Normalize(XMLoadFloat3(&forward) + right * sinf(xAngle) * aspect + up * sinf(yAngle)));
 
-XMMATRIX Camera::GetViewProjection()
-{
-	return GetView() * GetProjection();
+	return Ray(position, dir);
 }
-
-void Camera::SetAspect(float aspect)
+Ray Camera::CastScreenRay2(int x, int y)
 {
-	SetProjectionValues(90.0f, aspect, 0.1f, 3000.0f);
-}
-
-void Camera::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
-{
-	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
-	this->projection = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
+	return Ray({ 0,0,0 }, { 0,0,1 });
 }

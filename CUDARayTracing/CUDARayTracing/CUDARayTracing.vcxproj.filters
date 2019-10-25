@@ -13,6 +13,9 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vec3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DXManager.h">
@@ -28,6 +31,9 @@
       <Filter>Header FIles</Filter>
     </ClInclude>
     <ClInclude Include="Sphere.h">
+      <Filter>Header FIles</Filter>
+    </ClInclude>
+    <ClInclude Include="vec3.h">
       <Filter>Header FIles</Filter>
     </ClInclude>
   </ItemGroup>
