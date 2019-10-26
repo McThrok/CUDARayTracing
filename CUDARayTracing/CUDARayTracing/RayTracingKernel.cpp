@@ -3,7 +3,7 @@
 
 extern "C"
 {
-	void cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, Sphere* spheres, int num_sphere);
+	void cuda_texture_2d(Screen screen, Sphere* spheres, int num_sphere);
 	void cuda_copy_colors(void* surface, size_t width, size_t height, size_t pitch, float* colors);
 }
 
@@ -31,16 +31,16 @@ void RayTracingKernel::RunGPU()
 	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
-	// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-	cuda_texture_2d(cudaLinearMemory, width, height, pitch, scene.spheres, scene.sphere_num);
+	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
+	cuda_texture_2d(screen, scene.spheres, scene.sphere_num);
 	getLastCudaError("cuda_texture_2d failed");
 
-	// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
+	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
 	cudaMemcpy2DToArray(
 		cuArray, // dst array
 		0, 0,    // offset
-		cudaLinearMemory, pitch,       // src
-		width * 4 * sizeof(float), height, // extent
+		screen.surface, screen.pitch,       // src
+		screen.width * 4 * sizeof(float), screen.height, // extent
 		cudaMemcpyDeviceToDevice); // kind
 	getLastCudaError("cudaMemcpy2DToArray failed");
 
@@ -53,8 +53,8 @@ void RayTracingKernel::RunGPU()
 
 bool RayTracingKernel::Init(int width, int height, bool cpu)
 {
-	this->width = width;
-	this->height = height;
+	screen.width = width;
+	screen.height = height;
 	this->cpu = cpu;
 
 	if (!findCUDADevice())
@@ -77,12 +77,12 @@ void RayTracingKernel::RegisterTexture(ID3D11Texture2D* texture)
 	// cuda cannot write into the texture directly : the texture is seen as a cudaArray and can only be mapped as a texture
 	// Create a buffer so that cuda can write into it
 	// pixel fmt is DXGI_FORMAT_R32G32B32A32_FLOAT
-	checkCudaErrors(cudaMallocPitch(&cudaLinearMemory, &pitch, width * sizeof(float) * 4, height));
-	cudaMemset(cudaLinearMemory, 1, pitch * height);
+	checkCudaErrors(cudaMallocPitch(&screen.surface, &screen.pitch, screen.width * sizeof(float) * 4, screen.height));
+	cudaMemset(screen.surface, 1, screen.pitch * screen.height);
 }
 
 void RayTracingKernel::InitCPU() {
-	colors = new float[width * height * 4];
+	colors = new float[screen.width * screen.height * 4];
 }
 
 void RayTracingKernel::RunCPU()
@@ -91,11 +91,11 @@ void RayTracingKernel::RunCPU()
 	Sphere s({ 0.0f, 0.0f, -5.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 	Sphere s2({ 0.0f, 0.0f, 5.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 
-	for (int x = 0; x < width; x++)
+	for (int x = 0; x < screen.width; x++)
 	{
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < screen.height; y++)
 		{
-			float* pixel = colors + 4 * (x + y * width);//row major
+			float* pixel = colors + 4 * (x + y * screen.width);//row major
 			Ray ray = c.CastScreenRay(x, y);
 
 			pixel[3] = 1.0f; // alpha
@@ -126,14 +126,14 @@ void RayTracingKernel::CopyToGPU()
 	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
-	checkCudaErrors(cudaMemcpy(cudaLinearMemory, colors, width * height * 4 * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(screen.surface, colors, screen.width * screen.height * 4 * sizeof(float), cudaMemcpyHostToDevice));
 
-	// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
+	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
 	cudaMemcpy2DToArray(
 		cuArray, // dst array
 		0, 0,    // offset
-		cudaLinearMemory, pitch,       // src
-		width * 4 * sizeof(float), height, // extent
+		screen.surface, screen.pitch,       // src
+		screen.width * 4 * sizeof(float), screen.height, // extent
 		cudaMemcpyDeviceToDevice); // kind
 	getLastCudaError("cudaMemcpy2DToArray failed");
 
@@ -144,7 +144,7 @@ void RayTracingKernel::CopyToGPU()
 void RayTracingKernel::Cleanup()
 {
 	checkCudaErrors(cudaGraphicsUnregisterResource(cudaResource));
-	checkCudaErrors(cudaFree(cudaLinearMemory));
+	checkCudaErrors(cudaFree(screen.surface));
 	checkCudaErrors(cudaFree(scene.spheres));
 }
 

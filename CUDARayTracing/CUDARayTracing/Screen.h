@@ -2,7 +2,7 @@
 
 class Screen {
 public:
-	unsigned char* surface;
+	void* surface;
 	int width;
 	int height;
 	size_t pitch;

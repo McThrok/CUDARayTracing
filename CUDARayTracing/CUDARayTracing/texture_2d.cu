@@ -7,37 +7,38 @@
 
 #include "vec3.h"
 #include "Sphere.h"
+#include "Screen.h"
 
 #define PI 3.1415926536f
 
 
-__global__ void cuda_kernel_texture_2d(unsigned char* surface, int width, int height, size_t pitch, Sphere* spheres, int num_sphere)
+__global__ void cuda_kernel_texture_2d(Screen screen, Sphere* spheres, int num_sphere)
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	float* pixel;
 
-	if (x >= width || y >= height) return;
+	if (x >= screen.width || y >= screen.height) return;
 
 	// get a pointer to the pixel at (x,y)
-	pixel = (float*)(surface + y * pitch) + 4 * x;
+	pixel = (float*)((char*)screen.surface + y * screen.pitch) + 4 * x;
 
-	pixel[0] = 0.0 * x / width;
-	pixel[1] = 0.0 * y / height; // green
-	pixel[2] = spheres[0].position.z; // blue
+	pixel[0] = 0.0 * x / screen.width;
+	pixel[1] = 0.0 * y / screen.height; // green
+	pixel[2] = 1; // blue
 	pixel[3] = 1; // alpha
 
 }
 
 extern "C"
-void cuda_texture_2d(void* surface, int width, int height, size_t pitch, Sphere * spheres, int num_sphere)
+void cuda_texture_2d(Screen screen, Sphere * spheres, int num_sphere)
 {
 	cudaError_t error = cudaSuccess;
 
 	dim3 Db = dim3(16, 16);   // block dimensions are fixed to be 256 threads
-	dim3 Dg = dim3((width + Db.x - 1) / Db.x, (height + Db.y - 1) / Db.y);
+	dim3 Dg = dim3((screen.width + Db.x - 1) / Db.x, (screen.width + Db.y - 1) / Db.y);
 
-	cuda_kernel_texture_2d << <Dg, Db >> > ( (unsigned char*)surface, width, height, pitch, spheres, num_sphere);
+	cuda_kernel_texture_2d << <Dg, Db >> > (screen, spheres, num_sphere);
 
 	error = cudaGetLastError();
 
@@ -59,7 +60,7 @@ __global__ void cuda_kernel_copy_colors(unsigned char* surface, int width, int h
 
 	// get a pointer to the pixel at (x,y)
 	pixel = (float*)(surface + y * pitch) + 4 * x;
-	color = colors + y + x * height*4;
+	color = colors + y + x * height * 4;
 
 	pixel[0] = color[0];
 	pixel[1] = color[1];
@@ -76,7 +77,7 @@ void cuda_copy_colors(void* surface, int width, int height, size_t pitch, float*
 	dim3 Dg = dim3((width + Db.x - 1) / Db.x, (height + Db.y - 1) / Db.y);
 
 
-	cuda_kernel_copy_colors << <Dg, Db >> > ( (unsigned char*)surface, width, height, pitch, colors);
+	cuda_kernel_copy_colors << <Dg, Db >> > ((unsigned char*)surface, width, height, pitch, colors);
 
 	error = cudaGetLastError();
 

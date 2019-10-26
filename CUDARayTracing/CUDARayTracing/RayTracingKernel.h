@@ -27,16 +27,13 @@ class RayTracingKernel
 {
 public:
 	cudaGraphicsResource* cudaResource;
-	int width;
-	int height;
 	bool cpu;
-	size_t pitch;
 
 	void* cudaLinearMemory;
 	float* colors;
 
 	Scene scene;
-	//Screen screen;
+	Screen screen;
 
 	void Run();
 	bool Init(int width, int height, bool cpu = false);
