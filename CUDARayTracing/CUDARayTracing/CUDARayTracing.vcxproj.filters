@@ -18,9 +18,6 @@
     <ClInclude Include="RayTracingKernel.h">
       <Filter>Header FIles</Filter>
     </ClInclude>
-    <ClInclude Include="CudaCallableMember.h">
-      <Filter>Header FIles</Filter>
-    </ClInclude>
     <ClInclude Include="vec3.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
@@ -43,6 +40,9 @@
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
     <ClInclude Include="Object.h">
+      <Filter>Header FIles\RT</Filter>
+    </ClInclude>
+    <ClInclude Include="CudaCallableMember.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
   </ItemGroup>

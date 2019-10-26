@@ -16,6 +16,8 @@
 #include <DirectXMath.h>
 #include "Camera.h"
 #include "Sphere.h"
+#include "Screen.h"
+#include "Scene.h"
 
 #define NAME_LEN 512
 
@@ -25,8 +27,6 @@ class RayTracingKernel
 {
 public:
 	cudaGraphicsResource* cudaResource;
-	float* spheres;
-	int spheres_num;
 	int width;
 	int height;
 	bool cpu;
@@ -35,6 +35,8 @@ public:
 	void* cudaLinearMemory;
 	float* colors;
 
+	Scene scene;
+	//Screen screen;
 
 	void Run();
 	bool Init(int width, int height, bool cpu = false);
@@ -43,7 +45,7 @@ public:
 
 private:
 	bool findCUDADevice();
-	void InitSpheres();
+	void InitScene();
 
 	//GPU
 	void RunGPU();

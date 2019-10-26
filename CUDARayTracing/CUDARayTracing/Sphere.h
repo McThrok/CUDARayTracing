@@ -10,9 +10,9 @@ class Sphere : public Object {
 public:
 	float radius;
 
-	CUDA Sphere::Sphere() : radius(1.0f) {}
+	CUDA Sphere() : radius(1.0f) {}
 
-	CUDA Sphere::Sphere(vec3 _position, vec3 _color, float _radius)
+	CUDA Sphere(vec3 _position, vec3 _color, float _radius)
 		: Object(_position, _color), radius(_radius) {}
 
 	CUDA vec3 getNormalAt(vec3 point)  override {

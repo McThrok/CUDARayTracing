@@ -3,8 +3,8 @@
 
 extern "C"
 {
-	bool cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, float* spheres, int num_sphere);
-	bool cuda_copy_colors(void* surface, size_t width, size_t height, size_t pitch, float* colors);
+	void cuda_texture_2d(void* surface, size_t width, size_t height, size_t pitch, Sphere* spheres, int num_sphere);
+	void cuda_copy_colors(void* surface, size_t width, size_t height, size_t pitch, float* colors);
 }
 
 void RayTracingKernel::Run()
@@ -32,7 +32,7 @@ void RayTracingKernel::RunGPU()
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 	// kick off the kernel and send the staging buffer cudaLinearMemory as an argument to allow the kernel to write to it
-	cuda_texture_2d(cudaLinearMemory, width, height, pitch, spheres, spheres_num);
+	cuda_texture_2d(cudaLinearMemory, width, height, pitch, scene.spheres, scene.sphere_num);
 	getLastCudaError("cuda_texture_2d failed");
 
 	// then we want to copy cudaLinearMemory to the D3D texture, via its mapped form : cudaArray
@@ -63,7 +63,7 @@ bool RayTracingKernel::Init(int width, int height, bool cpu)
 	if (cpu)
 		InitCPU();
 
-	InitSpheres();
+	InitScene();
 
 	return true;
 }
@@ -145,13 +145,14 @@ void RayTracingKernel::Cleanup()
 {
 	checkCudaErrors(cudaGraphicsUnregisterResource(cudaResource));
 	checkCudaErrors(cudaFree(cudaLinearMemory));
-	checkCudaErrors(cudaFree(spheres));
+	checkCudaErrors(cudaFree(scene.spheres));
 }
 
-void RayTracingKernel::InitSpheres() {
-	spheres_num = 1;
+void RayTracingKernel::InitScene() {
+	scene.plane_num = 0;
+	scene.sphere_num = 1;
 
-	unsigned int mem_size = sizeof(float) * 4 * spheres_num;
+	unsigned int mem_size = sizeof(float) * 4 * scene.sphere_num;
 	float* h_spheres = (float*)malloc(mem_size);
 
 	h_spheres[0] = 0;
@@ -159,8 +160,8 @@ void RayTracingKernel::InitSpheres() {
 	h_spheres[2] = 0;
 	h_spheres[3] = 0.5f;
 
-	checkCudaErrors(cudaMalloc((void**)&spheres, mem_size));
-	checkCudaErrors(cudaMemcpy(spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc((void**)&scene.spheres, mem_size));
+	checkCudaErrors(cudaMemcpy(scene.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
 
 	free(h_spheres);
 }

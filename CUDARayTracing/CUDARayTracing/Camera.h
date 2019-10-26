@@ -20,6 +20,8 @@ private:
 	float fov;
 
 public:
+	CUDA Camera(){}
+
 	CUDA Camera(int screenWidth, int screenHeight)
 	{
 		//LH or RH?

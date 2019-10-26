@@ -9,7 +9,6 @@ public:
 	float x, y, z;
 
 	CUDA vec3() : vec3(0, 0, 0) {}
-	CUDA ~vec3() {}
 	CUDA vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 	CUDA vec3(const vec3& u)
 	{
