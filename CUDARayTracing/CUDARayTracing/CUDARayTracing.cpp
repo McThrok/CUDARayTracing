@@ -45,6 +45,23 @@ void Render()
 	dxm.DrawScene();
 }
 
+void HandleMouseInput()
+{
+	static POINT last_pos;
+	POINT curr_pos;
+	GetCursorPos(&curr_pos);
+
+	if ((GetKeyState(VK_RBUTTON) & 0x80) != 0)
+	{
+		float angle = dt * rtk.sm.h_cam->rotation_speed;
+		vec3 change = { -(float)(curr_pos.y - last_pos.y) * angle,-(float)(curr_pos.x - last_pos.x) * angle, 0 };
+		rtk.sm.h_cam->SetRotation(rtk.sm.h_cam->GetRotation() + change);
+		rtk.sm.UpdateCamera();
+	}
+
+	last_pos = curr_pos;
+}
+
 void Run() {
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 	UpdateWindow(hWnd);
@@ -70,6 +87,7 @@ void Run() {
 			else
 			{
 				Render();
+				HandleMouseInput();//hacky?
 			}
 		}
 
@@ -95,44 +113,44 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			if (wParam == 0x51)//q
 			{
-				cam->position.y += dt * cam->speed;
+				cam->position.y += dt * cam->movement_speed;
 				chagned = true;
 			}
 			if (wParam == 0x5A)//z
 			{
-				cam->position.y -= dt * cam->speed;
+				cam->position.y -= dt * cam->movement_speed;
 				chagned = true;
 			}
 			if (wParam == 0x57)//w
 			{
 				vec3 forward = cam->GetForward();
 				forward.y = 0;
-				cam->position += forward.norm() * cam->speed * dt;
+				cam->position += forward.norm() * cam->movement_speed * dt;
 				chagned = true;
 			}
 			if (wParam == 0x41)//a
 			{
 				vec3 right = cam->GetRight();
 				right.y = 0;
-				cam->position -= right.norm() * cam->speed * dt;
+				cam->position -= right.norm() * cam->movement_speed * dt;
 				chagned = true;
 			}
 			if (wParam == 0x53)//s
 			{
 				vec3 forward = cam->GetForward();
 				forward.y = 0;
-				cam->position -= forward.norm() * cam->speed * dt;
+				cam->position -= forward.norm() * cam->movement_speed * dt;
 				chagned = true;
 			}
 			if (wParam == 0x44)//d
 			{
 				vec3 right = cam->GetRight();
 				right.y = 0;
-				cam->position += right.norm() * cam->speed * dt;
+				cam->position += right.norm() * cam->movement_speed * dt;
 				chagned = true;
 			}
 
-			if (chagned) 
+			if (chagned)
 				rtk.sm.UpdateCamera();
 		}
 		break;

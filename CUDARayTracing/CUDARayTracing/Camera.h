@@ -11,7 +11,8 @@ class Camera
 public:
 	vec3 position;
 	vec3 rotation;
-	float speed;
+	float movement_speed;
+	float rotation_speed;
 
 private:
 	int width;
@@ -32,7 +33,8 @@ public:
 		//LH or RH?
 		rotation = { 0,0,0 };
 		position = { 0,0,0 };
-		speed = 100;
+		movement_speed = 100;
+		rotation_speed = 10;
 
 		width = screenWidth;
 		height = screenHeight;
