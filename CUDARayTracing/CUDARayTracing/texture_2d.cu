@@ -24,10 +24,21 @@ __global__ void cuda_kernel_texture_2d(Screen screen, Scene scene)
 	// get a pointer to the pixel at (x,y)
 	pixel = (float*)((char*)screen.surface + y * screen.pitch) + 4 * x;
 
-	pixel[0] = 0.0 * x / screen.width;
-	pixel[1] = 0.0 * y / screen.height; // green
-	pixel[2] = 1; // blue
-	pixel[3] = 1; // alpha
+	Ray ray = scene.cam.CastScreenRay(x, y);
+
+	pixel[3] = 1.0f; // alpha
+	if (scene.spheres[0].findIntersection(ray) > 0)
+	{
+		pixel[0] = 1.0f;// 0.0 * x / width;
+		pixel[1] = 0.0f;// 0.0 * y / height; // green
+		pixel[2] = 0.0f; // blue
+	}
+	else {
+		pixel[0] = 0.0f;// 0.0 * x / width;
+		pixel[1] = 1.0f;// 0.0 * y / height; // green
+		pixel[2] = 0.0f; // blue
+
+	}
 
 }
 

@@ -152,18 +152,16 @@ void RayTracingKernel::InitScene() {
 	scene.plane_num = 0;
 	scene.sphere_num = 1;
 
-	unsigned int mem_size = sizeof(float) * 4 * scene.sphere_num;
-	float* h_spheres = (float*)malloc(mem_size);
+	Sphere* h_spheres = new Sphere[scene.sphere_num];
+	h_spheres[0] = Sphere({ 0.0f, 0.0f, -5.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 
-	h_spheres[0] = 0;
-	h_spheres[1] = 0;
-	h_spheres[2] = 0;
-	h_spheres[3] = 0.5f;
+	checkCudaErrors(cudaMalloc((void**)&scene.spheres, sizeof(Sphere) * scene.sphere_num));
+	checkCudaErrors(cudaMemcpy(scene.spheres, h_spheres, sizeof(Sphere) * scene.sphere_num, cudaMemcpyHostToDevice));
 
-	checkCudaErrors(cudaMalloc((void**)&scene.spheres, mem_size));
-	checkCudaErrors(cudaMemcpy(scene.spheres, h_spheres, mem_size, cudaMemcpyHostToDevice));
+	delete h_spheres;
 
-	free(h_spheres);
+
+	scene.cam = Camera(screen.width, screen.height);
 }
 
 
