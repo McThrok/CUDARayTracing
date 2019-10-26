@@ -45,21 +45,72 @@ void Render()
 	dxm.DrawScene();
 }
 
-void HandleMouseInput()
+void HandleInput()
 {
 	static POINT last_pos;
 	POINT curr_pos;
 	GetCursorPos(&curr_pos);
 
+	Camera* cam = rtk.sm.h_cam;
+	if (cam == nullptr)
+		return;
+
+	bool update = false;
 	if ((GetKeyState(VK_RBUTTON) & 0x80) != 0)
 	{
-		float angle = dt * rtk.sm.h_cam->rotation_speed;
+		float angle = dt * cam->rotation_speed;
 		vec3 change = { -(float)(curr_pos.y - last_pos.y) * angle,-(float)(curr_pos.x - last_pos.x) * angle, 0 };
-		rtk.sm.h_cam->SetRotation(rtk.sm.h_cam->GetRotation() + change);
-		rtk.sm.UpdateCamera();
+		cam->SetRotation(cam->GetRotation() + change);
+			update = true;
+	}
+	last_pos = curr_pos;
+
+	if ((GetKeyState(0x51) & 0x80) != 0)//q 
+	{
+		cam->position.y += dt * cam->movement_speed;
+		update = true;
 	}
 
-	last_pos = curr_pos;
+	if ((GetKeyState(0x5A) & 0x80) != 0)//z 
+	{
+		cam->position.y -= dt * cam->movement_speed;
+		update = true;
+	}
+
+	if ((GetKeyState(0x57) & 0x80) != 0)//w 
+	{
+		vec3 forward = cam->GetForward();
+		forward.y = 0;
+		cam->position += forward.norm() * cam->movement_speed * dt;
+		update = true;
+	}
+
+	if ((GetKeyState(0x41) & 0x80) != 0)//a 
+	{
+		vec3 right = cam->GetRight();
+		right.y = 0;
+		cam->position -= right.norm() * cam->movement_speed * dt;
+		update = true;
+	}
+
+	if ((GetKeyState(0x53) & 0x80) != 0)//s 
+	{
+		vec3 forward = cam->GetForward();
+		forward.y = 0;
+		cam->position -= forward.norm() * cam->movement_speed * dt;
+		update = true;
+	}
+
+	if ((GetKeyState(0x44) & 0x80) != 0)//d 
+	{
+		vec3 right = cam->GetRight();
+		right.y = 0;
+		cam->position += right.norm() * cam->movement_speed * dt;
+		update = true;
+	}
+
+	if (update)
+		rtk.sm.UpdateCamera();
 }
 
 void Run() {
@@ -87,7 +138,7 @@ void Run() {
 			else
 			{
 				Render();
-				HandleMouseInput();//hacky?
+				HandleInput();//hacky?
 			}
 		}
 
@@ -106,53 +157,6 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);
 			return 0;
 		}
-
-		if (rtk.sm.h_cam != nullptr) {
-			Camera* cam = rtk.sm.h_cam;
-			bool chagned = false;
-
-			if (wParam == 0x51)//q
-			{
-				cam->position.y += dt * cam->movement_speed;
-				chagned = true;
-			}
-			if (wParam == 0x5A)//z
-			{
-				cam->position.y -= dt * cam->movement_speed;
-				chagned = true;
-			}
-			if (wParam == 0x57)//w
-			{
-				vec3 forward = cam->GetForward();
-				forward.y = 0;
-				cam->position += forward.norm() * cam->movement_speed * dt;
-				chagned = true;
-			}
-			if (wParam == 0x41)//a
-			{
-				vec3 right = cam->GetRight();
-				right.y = 0;
-				cam->position -= right.norm() * cam->movement_speed * dt;
-				chagned = true;
-			}
-			if (wParam == 0x53)//s
-			{
-				vec3 forward = cam->GetForward();
-				forward.y = 0;
-				cam->position -= forward.norm() * cam->movement_speed * dt;
-				chagned = true;
-			}
-			if (wParam == 0x44)//d
-			{
-				vec3 right = cam->GetRight();
-				right.y = 0;
-				cam->position += right.norm() * cam->movement_speed * dt;
-				chagned = true;
-			}
-
-			if (chagned)
-				rtk.sm.UpdateCamera();
-		}
 		break;
 
 	case WM_DESTROY:
@@ -164,9 +168,9 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 		ValidateRect(hWnd, nullptr);
 		return 0;
-	}
+}
 
-	return DefWindowProc(hWnd, msg, wParam, lParam);
+return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
 void InitWindow() {
