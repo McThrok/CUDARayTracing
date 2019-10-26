@@ -2,6 +2,7 @@
 #include "Sphere.h"
 #include "Plane.h"
 #include "Camera.h"
+#include "Light.h"
 
 class Scene {
 public:
@@ -11,6 +12,7 @@ public:
 	Plane* planes;
 	int plane_num;
 
+	Light light;
 	Camera cam;
 
 };

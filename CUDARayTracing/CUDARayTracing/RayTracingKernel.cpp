@@ -162,6 +162,7 @@ void RayTracingKernel::InitScene() {
 
 
 	scene.cam = Camera(screen.width, screen.height);
+	scene.light = Light({ 0,5,0 }, { 1,1,1 });
 }
 
 

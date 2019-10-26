@@ -9,6 +9,7 @@
 #include "Sphere.h"
 #include "Scene.h"
 #include "Screen.h"
+#include <algorithm>
 
 #define PI 3.1415926536f
 
@@ -27,11 +28,15 @@ __global__ void cuda_kernel_texture_2d(Screen screen, Scene scene)
 	Ray ray = scene.cam.CastScreenRay(x, y);
 
 	pixel[3] = 1.0f; // alpha
-	if (scene.spheres[0].findIntersection(ray) > 0)
+	Sphere sphere = scene.spheres[0];
+	float dist = sphere.findIntersection(ray);
+	if (dist > 0)
 	{
-		pixel[0] = 1.0f;// 0.0 * x / width;
-		pixel[1] = 0.0f;// 0.0 * y / height; // green
-		pixel[2] = 0.0f; // blue
+		vec3 p = ray.getPointAt(dist);
+		vec3 col = scene.light.getColor(scene.cam, p, sphere.getNormalAt(p),sphere.color);
+		pixel[0] = col.x;// 0.0 * x / width;
+		pixel[1] = col.y;// 0.0 * y / height; // green
+		pixel[2] = col.z; // blue
 	}
 	else {
 		pixel[0] = 0.0f;// 0.0 * x / width;

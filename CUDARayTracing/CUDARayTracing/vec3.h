@@ -160,6 +160,11 @@ public:
 		return vec3(y * u.z - z * u.y, z * u.x - x * u.z, x * u.y - y * u.x);
 	}
 
+	CUDA vec3 reflect(const vec3& u) const
+	{
+		return u * (*this).dot(u) / u.length() / u.length() * 2 - *this;
+	}
+
 	CUDA vec3 norm() const
 	{
 		return vec3(*this) /= length();

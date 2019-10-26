@@ -13,7 +13,7 @@ public:
 	CUDA Object() :position({ 0,0,0 }), color({ 0.5f,0.5f,0.5f }) {}
 
 	CUDA Object(vec3 _position, vec3 _color)
-		: position(_position), color(color) {}
+		: position(_position), color(_color) {}
 
 	CUDA virtual float findIntersection(Ray ray) = 0;
 	CUDA virtual vec3 getNormalAt(vec3 point) = 0;

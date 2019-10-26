@@ -10,4 +10,8 @@ public:
 
 	CUDA Ray() :origin({ 0,0,0 }), direction({ 0,0,1 }) {}
 	CUDA Ray(vec3 o, vec3 d) : origin(o), direction(d) {}
+
+	CUDA vec3 getPointAt(float d) {
+		return origin + direction * d;
+	}
 };
