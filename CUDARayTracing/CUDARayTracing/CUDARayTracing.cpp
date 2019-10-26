@@ -15,6 +15,7 @@
 
 #include "RayTracingKernel.h"
 #include "DXManager.h"
+#include "Timer.h"
 
 
 RayTracingKernel rtk;
@@ -22,6 +23,8 @@ DXManager dxm;
 
 HWND hWnd;
 WNDCLASSEX wc;
+Timer timer;
+float dt = 0;
 
 bool g_bDone = false;
 
@@ -45,9 +48,13 @@ void Render()
 void Run() {
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 	UpdateWindow(hWnd);
+	timer.Start();
 
 	while (false == g_bDone)
 	{
+		dt = timer.GetMilisecondsElapsed();
+		timer.Restart();
+
 		Render();
 
 		MSG msg;
@@ -82,6 +89,52 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			return 0;
 		}
 
+		if (rtk.sm.h_cam != nullptr) {
+			Camera* cam = rtk.sm.h_cam;
+			bool chagned = false;
+
+			if (wParam == 0x51)//q
+			{
+				cam->position.y += dt * cam->speed;
+				chagned = true;
+			}
+			if (wParam == 0x5A)//z
+			{
+				cam->position.y -= dt * cam->speed;
+				chagned = true;
+			}
+			if (wParam == 0x57)//w
+			{
+				vec3 forward = cam->GetForward();
+				forward.y = 0;
+				cam->position += forward.norm() * cam->speed * dt;
+				chagned = true;
+			}
+			if (wParam == 0x41)//a
+			{
+				vec3 right = cam->GetRight();
+				right.y = 0;
+				cam->position -= right.norm() * cam->speed * dt;
+				chagned = true;
+			}
+			if (wParam == 0x53)//s
+			{
+				vec3 forward = cam->GetForward();
+				forward.y = 0;
+				cam->position -= forward.norm() * cam->speed * dt;
+				chagned = true;
+			}
+			if (wParam == 0x44)//d
+			{
+				vec3 right = cam->GetRight();
+				right.y = 0;
+				cam->position += right.norm() * cam->speed * dt;
+				chagned = true;
+			}
+
+			if (chagned) 
+				rtk.sm.UpdateCamera();
+		}
 		break;
 
 	case WM_DESTROY:

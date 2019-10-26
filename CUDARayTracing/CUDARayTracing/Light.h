@@ -16,10 +16,10 @@ public:
 
 	CUDA Light() : position({ 0,0,0 }), color({ 1,1,1 }) {}
 	CUDA Light(vec3 p, vec3 c) : position(p), color(c) {}
-	CUDA vec3 getColor(const Camera& cam, vec3 p, vec3 n, vec3 c) {
+	CUDA vec3 getColor(Camera* cam, vec3 p, vec3 n, vec3 c) {
 
 		vec3 toLight = (position - p).norm();
-		vec3 toCam = (cam.position - p).norm();
+		vec3 toCam = (cam->position - p).norm();
 		vec3 r = toLight.reflect(n.norm());
 
 		float diff = toLight.dot(n);

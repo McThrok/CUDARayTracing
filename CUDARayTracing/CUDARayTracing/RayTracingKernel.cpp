@@ -32,7 +32,7 @@ void RayTracingKernel::RunGPU()
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
-	cuda_texture_2d(screen, scene);
+	cuda_texture_2d(screen, sm.scene);
 	getLastCudaError("cuda_texture_2d failed");
 
 	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
@@ -145,24 +145,26 @@ void RayTracingKernel::Cleanup()
 {
 	checkCudaErrors(cudaGraphicsUnregisterResource(cudaResource));
 	checkCudaErrors(cudaFree(screen.surface));
-	checkCudaErrors(cudaFree(scene.spheres));
+	sm.Cleanup();
 }
 
 void RayTracingKernel::InitScene() {
-	scene.plane_num = 0;
-	scene.sphere_num = 1;
+	sm.scene.plane_num = 0;
+	sm.scene.sphere_num = 1;
 
-	Sphere* h_spheres = new Sphere[scene.sphere_num];
+	Sphere* h_spheres = new Sphere[sm.scene.sphere_num];
 	h_spheres[0] = Sphere({ 0.0f, 0.0f, -5.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 
-	checkCudaErrors(cudaMalloc((void**)&scene.spheres, sizeof(Sphere) * scene.sphere_num));
-	checkCudaErrors(cudaMemcpy(scene.spheres, h_spheres, sizeof(Sphere) * scene.sphere_num, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc((void**)&sm.scene.spheres, sizeof(Sphere) * sm.scene.sphere_num));
+	checkCudaErrors(cudaMemcpy(sm.scene.spheres, h_spheres, sizeof(Sphere) * sm.scene.sphere_num, cudaMemcpyHostToDevice));
 
 	delete h_spheres;
 
+	sm.h_cam = new Camera(screen.width, screen.height);
+	sm.UpdateCamera();
 
-	scene.cam = Camera(screen.width, screen.height);
-	scene.light = Light({ 0,5,0 }, { 1,1,1 });
+	sm.h_light = new Light({ 0,5,0 }, { 1,1,1 });
+	sm.UpdateLight();
 }
 
 

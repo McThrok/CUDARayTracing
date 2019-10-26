@@ -12,7 +12,7 @@ public:
 	Plane* planes;
 	int plane_num;
 
-	Light light;
-	Camera cam;
+	Light* light;
+	Camera* cam;
 
 };

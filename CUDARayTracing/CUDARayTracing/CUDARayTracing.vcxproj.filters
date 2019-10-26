@@ -10,6 +10,12 @@
     <ClCompile Include="RayTracingKernel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DXManager.h">
@@ -47,6 +53,12 @@
     </ClInclude>
     <ClInclude Include="Light.h">
       <Filter>Header FIles\RT</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header FIles</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
+      <Filter>Header FIles</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

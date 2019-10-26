@@ -17,7 +17,7 @@
 #include "Camera.h"
 #include "Sphere.h"
 #include "Screen.h"
-#include "Scene.h"
+#include "SceneManager.h"
 
 #define NAME_LEN 512
 
@@ -32,7 +32,7 @@ public:
 	void* cudaLinearMemory;
 	float* colors;
 
-	Scene scene;
+	SceneManager sm;
 	Screen screen;
 
 	void Run();
