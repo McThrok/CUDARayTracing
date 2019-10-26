@@ -8,14 +8,12 @@
 
 class Plane : public Object {
 public:
-	float width;
-	float height;
 	vec3 normal;
 
-	CUDA Plane() : normal({ 0,1,0 }), width(0), height(0) {}
+	CUDA Plane() : normal({ 0,1,0 }) {}
 
-	CUDA Plane(vec3 _position, vec3 _normal, vec3 _color, float _width, float _height)
-		: Object(_position, _color), normal(_normal), width(_width), height(_height) {}
+	CUDA Plane(vec3 _position, vec3 _normal, vec3 _color)
+		: Object(_position, _color), normal(_normal) {}
 
 	CUDA vec3 getNormalAt(vec3 point) override {
 		return normal;
@@ -28,9 +26,10 @@ public:
 			return -1;
 		}
 		else {
-			//NOT IMPLEMENTED !!!!
-			return -1;
+			vec3 dist_vec = position - ray.origin;
+			float dist = ray.direction.length() * dist_vec.dot(-normal) / ray.direction.dot(-normal);
+
+			return dist;
 		}
 	}
-
 };

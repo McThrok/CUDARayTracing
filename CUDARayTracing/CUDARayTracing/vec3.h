@@ -134,9 +134,9 @@ public:
 	}
 
 
-	CUDA vec3& operator-()
+	CUDA vec3 operator-()
 	{
-		return (*this) *= -1.0f;
+		return vec3(*this) *= -1.0f;
 	}
 
 	CUDA bool operator==(const vec3& u) const
