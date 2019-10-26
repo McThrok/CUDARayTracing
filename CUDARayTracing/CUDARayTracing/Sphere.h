@@ -3,29 +3,23 @@
 #include "math.h"
 #include "Ray.h"
 #include "vec3.h"
+#include "Object.h"
+#include "CudaCallableMember.h"
 
-#include <DirectXMath.h>
-
-using namespace DirectX;
-
-class Sphere {
+class Sphere : public Object {
 public:
-	vec3 position;
 	float radius;
-	vec3 color;
 
-	Sphere::Sphere() :position({ 0,0,0 }), radius(1.0f), color({ 0.5,0.5,0.5 }) {}
+	CUDA Sphere::Sphere() : radius(1.0f) {}
 
-	Sphere::Sphere(vec3 _position, float _radius, vec3 _color)
-		: position(_position), radius(_radius), color(_color) {}
+	CUDA Sphere::Sphere(vec3 _position, vec3 _color, float _radius)
+		: Object(_position, _color), radius(_radius) {}
 
-
-	vec3 getNormalAt(vec3 point) {
-		// normal always points away from the center of a sphere
+	CUDA vec3 getNormalAt(vec3 point)  override {
 		return (point - position).norm();
 	}
 
-	float findIntersection(Ray ray) {
+	CUDA float findIntersection(Ray ray) override {
 		float b = (2 * (ray.origin.x - position.x) * ray.direction.x) + (2 * (ray.origin.y - position.y) * ray.direction.y) + (2 * (ray.origin.z - position.z) * ray.direction.z);
 		float c = pow(ray.origin.x - position.x, 2) + pow(ray.origin.y - position.y, 2) + pow(ray.origin.z - position.z, 2) - (radius * radius);
 

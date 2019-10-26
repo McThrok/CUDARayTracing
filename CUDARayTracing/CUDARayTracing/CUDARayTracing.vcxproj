@@ -95,18 +95,21 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CUDARayTracing.cpp" />
     <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="RayTracingKernel.cpp" />
-    <ClCompile Include="vec3.cpp" />
     <CudaCompile Include="texture_2d.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CudaCallableMember.h" />
     <ClInclude Include="DXManager.h" />
+    <ClInclude Include="Object.h" />
+    <ClInclude Include="Plane.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="RayTracingKernel.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="Screen.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="vec3.h" />
   </ItemGroup>

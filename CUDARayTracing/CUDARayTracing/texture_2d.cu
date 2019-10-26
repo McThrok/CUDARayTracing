@@ -5,12 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <DirectXMath.h>
 #include "vec3.h"
 
 #define PI 3.1415926536f
 
-using namespace DirectX;
 
 struct qwe {
 	int a;
