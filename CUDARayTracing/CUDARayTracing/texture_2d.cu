@@ -7,12 +7,13 @@
 
 #include "vec3.h"
 #include "Sphere.h"
+#include "Scene.h"
 #include "Screen.h"
 
 #define PI 3.1415926536f
 
 
-__global__ void cuda_kernel_texture_2d(Screen screen, Sphere* spheres, int num_sphere)
+__global__ void cuda_kernel_texture_2d(Screen screen, Scene scene)
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -31,14 +32,14 @@ __global__ void cuda_kernel_texture_2d(Screen screen, Sphere* spheres, int num_s
 }
 
 extern "C"
-void cuda_texture_2d(Screen screen, Sphere * spheres, int num_sphere)
+void cuda_texture_2d(Screen screen, Scene scene)
 {
 	cudaError_t error = cudaSuccess;
 
 	dim3 Db = dim3(16, 16);   // block dimensions are fixed to be 256 threads
 	dim3 Dg = dim3((screen.width + Db.x - 1) / Db.x, (screen.width + Db.y - 1) / Db.y);
 
-	cuda_kernel_texture_2d << <Dg, Db >> > (screen, spheres, num_sphere);
+	cuda_kernel_texture_2d << <Dg, Db >> > (screen, scene);
 
 	error = cudaGetLastError();
 

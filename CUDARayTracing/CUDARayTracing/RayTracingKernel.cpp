@@ -3,7 +3,7 @@
 
 extern "C"
 {
-	void cuda_texture_2d(Screen screen, Sphere* spheres, int num_sphere);
+	void cuda_texture_2d(Screen screen, Scene scene);
 	void cuda_copy_colors(void* surface, size_t width, size_t height, size_t pitch, float* colors);
 }
 
@@ -32,7 +32,7 @@ void RayTracingKernel::RunGPU()
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
 	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
-	cuda_texture_2d(screen, scene.spheres, scene.sphere_num);
+	cuda_texture_2d(screen, scene);
 	getLastCudaError("cuda_texture_2d failed");
 
 	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
