@@ -29,19 +29,30 @@ __global__ void cuda_kernel_texture_2d(Screen screen, Scene scene)
 
 	pixel[3] = 1.0f; // alpha
 
-	Sphere sphere = scene.spheres[0];
-	float dist = sphere.findIntersection(ray);
-	if (dist > 0)
+	float minDist=10000;
+	int idx = -1;
+
+	for (int i = 0; i < scene.sphere_num; i++)
 	{
-		vec3 p = ray.getPointAt(dist);
+		Sphere sphere = scene.spheres[i];
+		float dist = sphere.findIntersection(ray);
+		if (dist>0 && dist < minDist) {
+			minDist = dist;
+			idx = i;
+		}
+	}
+	if (idx >= 0)
+	{
+		vec3 p = ray.getPointAt(minDist);
+		Sphere sphere = scene.spheres[idx];
 		vec3 col = scene.light->getColor(scene.cam, p, sphere.getNormalAt(p), sphere.color);
 		pixel[0] = col.x;// 0.0 * x / width;
 		pixel[1] = col.y;// 0.0 * y / height; // green
 		pixel[2] = col.z; // blue
 	}
 	else {
-		pixel[0] = 0.0f;// 0.0 * x / width;
-		pixel[1] = 1.0f;// 0.0 * y / height; // green
+		pixel[0] = 0.0f;
+		pixel[1] = 1.0f;
 		pixel[2] = 0.0f; // blue
 
 	}
