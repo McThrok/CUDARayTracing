@@ -65,15 +65,22 @@ void HandleInput()
 	}
 	last_pos = curr_pos;
 
+	float speed = cam->movement_speed;
+
+	if ((GetKeyState(VK_LSHIFT) & 0x80) != 0)//d 
+	{
+		speed *= 5;
+	}
+
 	if ((GetKeyState(0x51) & 0x80) != 0)//q 
 	{
-		cam->position.y += dt * cam->movement_speed;
+		cam->position.y += dt * speed;
 		update = true;
 	}
 
 	if ((GetKeyState(0x5A) & 0x80) != 0)//z 
 	{
-		cam->position.y -= dt * cam->movement_speed;
+		cam->position.y -= dt * speed;
 		update = true;
 	}
 
@@ -81,7 +88,7 @@ void HandleInput()
 	{
 		vec3 forward = cam->GetForward();
 		forward.y = 0;
-		cam->position += forward.norm() * cam->movement_speed * dt;
+		cam->position += forward.norm() * speed * dt;
 		update = true;
 	}
 
@@ -89,7 +96,7 @@ void HandleInput()
 	{
 		vec3 right = cam->GetRight();
 		right.y = 0;
-		cam->position -= right.norm() * cam->movement_speed * dt;
+		cam->position -= right.norm() * speed * dt;
 		update = true;
 	}
 
@@ -97,7 +104,7 @@ void HandleInput()
 	{
 		vec3 forward = cam->GetForward();
 		forward.y = 0;
-		cam->position -= forward.norm() * cam->movement_speed * dt;
+		cam->position -= forward.norm() * speed * dt;
 		update = true;
 	}
 
@@ -105,7 +112,7 @@ void HandleInput()
 	{
 		vec3 right = cam->GetRight();
 		right.y = 0;
-		cam->position += right.norm() * cam->movement_speed * dt;
+		cam->position += right.norm() * speed * dt;
 		update = true;
 	}
 

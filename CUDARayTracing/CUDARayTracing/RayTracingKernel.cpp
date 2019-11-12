@@ -1,5 +1,4 @@
 #include "RayTracingKernel.h"
-#include "vec3.h"
 
 extern "C"
 {
@@ -150,10 +149,13 @@ void RayTracingKernel::Cleanup()
 
 void RayTracingKernel::InitScene() {
 	sm.scene.plane_num = 0;
-	sm.scene.sphere_num = 1;
+	sm.scene.sphere_num = 10;
 
 	Sphere* h_spheres = new Sphere[sm.scene.sphere_num];
-	h_spheres[0] = Sphere({ 0.0f, 0.0f, -5.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
+	for (int i = 0; i < sm.scene.sphere_num; i++)
+	{
+		h_spheres[i] = getRandomSphere();
+	}
 
 	checkCudaErrors(cudaMalloc((void**)&sm.scene.spheres, sizeof(Sphere) * sm.scene.sphere_num));
 	checkCudaErrors(cudaMemcpy(sm.scene.spheres, h_spheres, sizeof(Sphere) * sm.scene.sphere_num, cudaMemcpyHostToDevice));
@@ -167,6 +169,24 @@ void RayTracingKernel::InitScene() {
 	sm.UpdateLight();
 }
 
+float RayTracingKernel::getRandomFloat(float min, float max) {
+	return  uniform_real_distribution<float>{min, max}(gen);
+}
+
+Sphere RayTracingKernel::getRandomSphere() {
+	Sphere s;
+	s.radius = getRandomFloat(0.3, 3);
+
+	s.color.x = getRandomFloat(0, 1);
+	s.color.y = getRandomFloat(0, 1);
+	s.color.z = getRandomFloat(0, 1);
+
+	s.position.x = getRandomFloat(-10, 10);
+	s.position.y = getRandomFloat(-5, 5);
+	s.position.z = getRandomFloat(-15, -5);
+
+	return s;
+}
 
 bool RayTracingKernel::findCUDADevice()
 {

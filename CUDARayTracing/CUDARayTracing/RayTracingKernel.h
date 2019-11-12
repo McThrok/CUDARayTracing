@@ -16,12 +16,16 @@
 #include <DirectXMath.h>
 #include "Camera.h"
 #include "Sphere.h"
+#include <random>
+
 #include "Screen.h"
 #include "SceneManager.h"
+#include "vec3.h"
 
 #define NAME_LEN 512
 
 using namespace DirectX;
+using namespace std;
 
 class RayTracingKernel
 {
@@ -35,10 +39,17 @@ public:
 	SceneManager sm;
 	Screen screen;
 
+	mt19937 gen{ random_device{}() };
+	//mt19937 gen{ 0 };
+
 	void Run();
 	bool Init(int width, int height, bool cpu = false);
 	void RegisterTexture(ID3D11Texture2D* texture);
 	void Cleanup();
+
+	float getRandomFloat(float min, float max);
+	Sphere getRandomSphere();
+
 
 private:
 	bool findCUDADevice();
