@@ -57,19 +57,19 @@ public:
 	}
 	CUDA vec3 GetForward() {
 		if (recal_fwd) {
-			recal_fwd = false;
 			forward = { -cosf(rotation.x) * sinf(rotation.y), sinf(rotation.x), -cosf(rotation.x) * cosf(rotation.y) };
+			recal_fwd = false;
 		}
 		return forward;
 	}
 	CUDA vec3 GetUp() {
 		if (recal_up) {
-			recal_up = false;
 			up = {
 				cosf(rotation.z) * sinf(rotation.x) * sinf(rotation.y) - cosf(rotation.y) * sinf(rotation.z),
 				cosf(rotation.x) * cosf(rotation.z),
 				cosf(rotation.y) * cosf(rotation.z) * sinf(rotation.x) + sinf(rotation.y) * sinf(rotation.z)
 			};
+			recal_up = false;
 		}
 		return up;
 	}
