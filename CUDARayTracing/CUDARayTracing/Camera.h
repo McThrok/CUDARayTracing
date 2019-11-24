@@ -10,7 +10,7 @@ class Camera
 {
 public:
 	vec3 position;
-	vec3 rotation;
+	vec3 rotation;//z==0
 	float movement_speed;
 	float rotation_speed;
 
@@ -65,9 +65,9 @@ public:
 	CUDA vec3 GetUp() {
 		if (recal_up) {
 			up = {
-				cosf(rotation.z) * sinf(rotation.x) * sinf(rotation.y) - cosf(rotation.y) * sinf(rotation.z),
-				cosf(rotation.x) * cosf(rotation.z),
-				cosf(rotation.y) * cosf(rotation.z) * sinf(rotation.x) + sinf(rotation.y) * sinf(rotation.z)
+				sinf(rotation.x) * sinf(rotation.y),
+				cosf(rotation.x),
+				cosf(rotation.y) * sinf(rotation.x)
 			};
 			recal_up = false;
 		}

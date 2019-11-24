@@ -6,48 +6,56 @@ Timer::Timer()
 	stop = std::chrono::high_resolution_clock::now();
 }
 
-double Timer::GetMilisecondsElapsed()
+void Timer::Start()
+{
+	if (!isrunning)
+	{
+		start = std::chrono::high_resolution_clock::now();
+		isrunning = true;
+	}
+}
+
+void Timer::Stop()
 {
 	if (isrunning)
 	{
-		auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start);
-		return elapsed.count();
-	}
-	else
-	{
-		auto elapsed = std::chrono::duration<double, std::milli>(stop - start);
-		return elapsed.count();
+		stop = std::chrono::high_resolution_clock::now();
+		isrunning = false;
+		AccumulateTime();
 	}
 }
 
 void Timer::Restart()
 {
-	isrunning = true;
-	start = std::chrono::high_resolution_clock::now();
+	Reset();
+	Start();
 }
 
-bool Timer::Stop()
+void Timer::Reset()
+{
+	accumulatedTime = 0;
+	start = stop;
+}
+
+void Timer::AccumulateTime()
 {
 	if (!isrunning)
-		return false;
-	else
 	{
-		stop = std::chrono::high_resolution_clock::now();
-		isrunning = false;
-		return true;
+		auto elapsed = std::chrono::duration<double, std::milli>(stop - start);
+		accumulatedTime += elapsed.count();
 	}
 }
 
-bool Timer::Start()
+double Timer::GetMilisecondsElapsed()
 {
 	if (isrunning)
 	{
-		return false;
+		auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start);
+		return accumulatedTime + elapsed.count();
 	}
 	else
 	{
-		start = std::chrono::high_resolution_clock::now();
-		isrunning = true;
-		return true;
+		auto elapsed = std::chrono::duration<double, std::milli>(stop - start);
+		return accumulatedTime + elapsed.count();
 	}
 }

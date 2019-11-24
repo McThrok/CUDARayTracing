@@ -30,7 +30,7 @@ float dt = 0;
 bool g_bDone = false;
 
 const unsigned int g_WindowWidth = 1280;
-const unsigned int g_WindowHeight = 720;
+const unsigned int g_WindowHeight = 768;
 
 void Cleanup()
 {

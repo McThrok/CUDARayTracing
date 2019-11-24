@@ -21,9 +21,18 @@ void RayTracingKernel::Run()
 	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
+	static Timer t;
+	static int i = 0;
+	i++;
+	t.Start();
 	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
 	cuda_texture_2d(screen, sm.scene);
 	getLastCudaError("cuda_texture_2d failed");
+	cudaDeviceSynchronize();
+	t.Stop();
+	if (i % 10 == 0)
+		printf("inner %f\n", t.GetMilisecondsElapsed()/i);
+
 
 	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
 	cudaMemcpy2DToArray(

@@ -95,7 +95,7 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CUDARayTracing.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="RayTracingKernel.cpp" />
     <ClCompile Include="SceneManager.cpp" />

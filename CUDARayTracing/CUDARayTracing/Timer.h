@@ -5,12 +5,17 @@ class Timer
 {
 public:
 	Timer();
-	double GetMilisecondsElapsed();
+	void Start();
+	void Stop();
+	void Reset();
 	void Restart();
-	bool Stop();
-	bool Start();
+	double GetMilisecondsElapsed();
+
 private:
+	void AccumulateTime();
+	double accumulatedTime = 0.0;
 	bool isrunning = false;
+
 #ifdef _WIN32
 	std::chrono::time_point<std::chrono::steady_clock> start;
 	std::chrono::time_point<std::chrono::steady_clock> stop;

@@ -16,6 +16,7 @@
 #include <DirectXMath.h>
 #include "Camera.h"
 #include "Sphere.h"
+#include "Timer.h"
 #include <random>
 
 #include "Screen.h"
