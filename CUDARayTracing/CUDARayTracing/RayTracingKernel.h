@@ -31,7 +31,6 @@ class RayTracingKernel
 {
 public:
 	cudaGraphicsResource* cudaResource;
-	bool cpu;
 
 	void* cudaLinearMemory;
 	float* colors;
@@ -39,11 +38,11 @@ public:
 	SceneManager sm;
 	Screen screen;
 
-	mt19937 gen{ random_device{}() };
-	//mt19937 gen{ 0 };
+	//mt19937 gen{ random_device{}() };
+	mt19937 gen{ 0 };
 
 	void Run();
-	bool Init(int width, int height, bool cpu = false);
+	bool Init(int width, int height);
 	void RegisterTexture(ID3D11Texture2D* texture);
 	void Cleanup();
 
@@ -54,13 +53,5 @@ public:
 private:
 	bool findCUDADevice();
 	void InitScene();
-
-	//GPU
-	void RunGPU();
-
-	//CPU
-	void InitCPU();
-	void RunCPU();
-	void CopyToGPU();
 };
 

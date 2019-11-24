@@ -9,6 +9,7 @@
 #include <cuda_d3d11_interop.h>
 #include <d3dcompiler.h>
 
+
 // includes, project
 #include <helper_cuda.h>
 #include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
@@ -201,7 +202,7 @@ int main(int argc, char* argv[])
 {
 	InitWindow();
 
-	if (!rtk.Init(g_WindowWidth, g_WindowHeight, false))
+	if (!rtk.Init(g_WindowWidth, g_WindowHeight))
 		exit(EXIT_SUCCESS);
 
 	if (!dxm.Init(hWnd, g_WindowWidth, g_WindowHeight))
