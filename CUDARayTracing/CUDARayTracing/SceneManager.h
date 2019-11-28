@@ -1,6 +1,5 @@
 #pragma once
 #include "Scene.h"
-#include "Sphere.h"
 #include "Camera.h"
 
 #include <dynlink_d3d11.h>
@@ -9,17 +8,25 @@
 #include <d3dcompiler.h>
 #include <helper_cuda.h>
 #include <helper_functions.h>   
+#include <random>
+
 
 class SceneManager
 {
 public:
 	Scene scene;
 
-	SceneManager() {}
 	Camera* cam;
 
-	void Cleanup();
+	//mt19937 gen{ random_device{}() };
+	std::mt19937 gen{ 0 };
+
+	void InitScene(int screenWidth, int screenHeight);
+	float getRandomFloat(float min, float max);
+	void getRandomSphere(vec3& position, float& radius, vec3& color);
+
 	void UpdateCamera();
+	void Cleanup();
 
 };
 

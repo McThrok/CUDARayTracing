@@ -1,11 +1,13 @@
 #pragma once
-#include "Sphere.h"
 #include "Camera.h"
 
 class Scene {
 public:
-	Sphere* spheres;
 	int sphere_num;
+
+	vec3* position;
+	float* radius;
+	vec3* color;
 
 	CameraData cam;
 };

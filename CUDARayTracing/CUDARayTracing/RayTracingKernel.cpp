@@ -3,6 +3,7 @@
 extern "C"
 {
 	void cuda_texture_2d(Screen screen, Scene scene);
+	void cuda_texture_2dx(Screen screen, Scene scene);
 }
 
 void RayTracingKernel::Run()
@@ -26,7 +27,8 @@ void RayTracingKernel::Run()
 	i++;
 	t.Start();
 	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
-	cuda_texture_2d(screen, sm.scene);
+	//cuda_texture_2d(screen, sm.scene);
+	cuda_texture_2dx(screen, sm.scene);
 	getLastCudaError("cuda_texture_2d failed");
 	cudaDeviceSynchronize();
 	t.Stop();
@@ -58,7 +60,7 @@ bool RayTracingKernel::Init(int width, int height)
 	if (!findCUDADevice())
 		return false;
 
-	InitScene();
+	sm.InitScene(width, height);
 
 	return true;
 }
@@ -118,42 +120,4 @@ void RayTracingKernel::Cleanup()
 	checkCudaErrors(cudaGraphicsUnregisterResource(cudaResource));
 	checkCudaErrors(cudaFree(screen.surface));
 	sm.Cleanup();
-}
-
-void RayTracingKernel::InitScene() {
-	sm.scene.sphere_num = 32;
-
-	Sphere* h_spheres = new Sphere[sm.scene.sphere_num];
-	for (int i = 0; i < sm.scene.sphere_num; i++)
-	{
-		h_spheres[i] = getRandomSphere();
-	}
-
-	checkCudaErrors(cudaMalloc((void**)&sm.scene.spheres, sizeof(Sphere) * sm.scene.sphere_num));
-	checkCudaErrors(cudaMemcpy(sm.scene.spheres, h_spheres, sizeof(Sphere) * sm.scene.sphere_num, cudaMemcpyHostToDevice));
-
-	delete h_spheres;
-
-	sm.cam = new Camera(screen.width, screen.height);
-	sm.UpdateCamera();
-
-}
-
-float RayTracingKernel::getRandomFloat(float min, float max) {
-	return  uniform_real_distribution<float>{min, max}(gen);
-}
-
-Sphere RayTracingKernel::getRandomSphere() {
-	Sphere s;
-	s.radius = getRandomFloat(0.3, 3);
-
-	s.color.x = getRandomFloat(0, 1);
-	s.color.y = getRandomFloat(0, 1);
-	s.color.z = getRandomFloat(0, 1);
-
-	s.position.x = getRandomFloat(-10, 10);
-	s.position.y = getRandomFloat(-5, 5);
-	s.position.z = getRandomFloat(-15, -5);
-
-	return s;
 }

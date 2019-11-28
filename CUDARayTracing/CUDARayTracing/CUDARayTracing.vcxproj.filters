@@ -33,9 +33,6 @@
     <ClInclude Include="Screen.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>Header FIles\RT</Filter>
-    </ClInclude>
     <ClInclude Include="Ray.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
