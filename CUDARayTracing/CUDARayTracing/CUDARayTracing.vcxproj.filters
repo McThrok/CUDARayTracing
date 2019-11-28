@@ -42,16 +42,7 @@
     <ClInclude Include="Camera.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
-    <ClInclude Include="Plane.h">
-      <Filter>Header FIles\RT</Filter>
-    </ClInclude>
-    <ClInclude Include="Object.h">
-      <Filter>Header FIles\RT</Filter>
-    </ClInclude>
     <ClInclude Include="CudaCallableMember.h">
-      <Filter>Header FIles\RT</Filter>
-    </ClInclude>
-    <ClInclude Include="Light.h">
       <Filter>Header FIles\RT</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">

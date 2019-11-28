@@ -121,8 +121,7 @@ void RayTracingKernel::Cleanup()
 }
 
 void RayTracingKernel::InitScene() {
-	sm.scene.plane_num = 0;
-	sm.scene.sphere_num = 10;
+	sm.scene.sphere_num = 32;
 
 	Sphere* h_spheres = new Sphere[sm.scene.sphere_num];
 	for (int i = 0; i < sm.scene.sphere_num; i++)
@@ -135,11 +134,9 @@ void RayTracingKernel::InitScene() {
 
 	delete h_spheres;
 
-	sm.h_cam = new Camera(screen.width, screen.height);
+	sm.cam = new Camera(screen.width, screen.height);
 	sm.UpdateCamera();
 
-	sm.h_light = new Light({ 0,5,0 }, { 1,1,1 });
-	sm.UpdateLight();
 }
 
 float RayTracingKernel::getRandomFloat(float min, float max) {

@@ -1,11 +1,13 @@
 #pragma once
 #include "Sphere.h"
 #include "Camera.h"
+#include "Light.h"
 
-class Scene {
+class CudaData {
 public:
 	Sphere* spheres;
 	int sphere_num;
 
-	CameraData cam;
+
+
 };

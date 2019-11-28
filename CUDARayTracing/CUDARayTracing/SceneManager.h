@@ -1,9 +1,7 @@
 #pragma once
 #include "Scene.h"
 #include "Sphere.h"
-#include "Plane.h"
 #include "Camera.h"
-#include "Light.h"
 
 #include <dynlink_d3d11.h>
 #include <cuda_runtime_api.h>
@@ -18,13 +16,10 @@ public:
 	Scene scene;
 
 	SceneManager() {}
-
-	Camera* h_cam;
-	Light* h_light;
+	Camera* cam;
 
 	void Cleanup();
 	void UpdateCamera();
-	void UpdateLight();
 
 };
 

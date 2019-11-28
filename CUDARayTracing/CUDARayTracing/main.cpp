@@ -52,7 +52,7 @@ void HandleInput()
 	POINT curr_pos;
 	GetCursorPos(&curr_pos);
 
-	Camera* cam = rtk.sm.h_cam;
+	Camera* cam = rtk.sm.cam;
 	if (cam == nullptr)
 		return;
 
@@ -210,9 +210,7 @@ int main(int argc, char* argv[])
 
 	rtk.RegisterTexture(dxm.pTexture);
 
-
 	Run();
-
 
 	exit(EXIT_SUCCESS);
 }
