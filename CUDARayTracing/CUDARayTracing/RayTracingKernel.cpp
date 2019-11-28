@@ -27,8 +27,8 @@ void RayTracingKernel::Run()
 	i++;
 	t.Start();
 	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
-	//cuda_texture_2d(screen, sm.scene);
-	cuda_texture_2dx(screen, sm.scene);
+	cuda_texture_2d(screen, sm.scene);
+	//cuda_texture_2dx(screen, sm.scene);
 	getLastCudaError("cuda_texture_2d failed");
 	cudaDeviceSynchronize();
 	t.Stop();
