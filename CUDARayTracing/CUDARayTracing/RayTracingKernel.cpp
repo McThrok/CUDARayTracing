@@ -2,8 +2,7 @@
 
 extern "C"
 {
-	void cuda_texture_2d(Screen screen, Scene scene);
-	void cuda_texture_2dx(Screen screen, Scene scene);
+	void execute_kernel(Screen screen, Scene scene);
 }
 
 void RayTracingKernel::Run()
@@ -15,8 +14,7 @@ void RayTracingKernel::Run()
 	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
-	cuda_texture_2dx(screen, sm.scene);
-	//cuda_texture_2d(screen, sm.scene);
+	execute_kernel(screen, sm.scene);
 	cudaDeviceSynchronize();
 	getLastCudaError("cuda_texture_2d failed");
 

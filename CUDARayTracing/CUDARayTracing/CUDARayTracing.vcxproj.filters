@@ -64,7 +64,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="texture_2d.cu">
+    <CudaCompile Include="kernel.cu">
       <Filter>Cuda</Filter>
     </CudaCompile>
   </ItemGroup>
