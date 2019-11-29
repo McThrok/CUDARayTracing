@@ -8,13 +8,6 @@ extern "C"
 
 void RayTracingKernel::Run()
 {
-	//
-	// map the resources we've registered so we can access them in Cuda
-	// - it is most efficient to map and unmap all resources in a single call,
-	//   and to have the map/unmap calls be the boundary between using the GPU
-	//   for Direct3D and Cuda
-	//
-
 	cudaGraphicsMapResources(1, &cudaResource, 0);
 	getLastCudaError("cudaGraphicsMapResources(1) failed");
 
@@ -22,19 +15,10 @@ void RayTracingKernel::Run()
 	cudaGraphicsSubResourceGetMappedArray(&cuArray, cudaResource, 0, 0);
 	getLastCudaError("cudaGraphicsSubResourceGetMappedArray (cuda_texture_2d) failed");
 
-	static Timer t;
-	static int i = 0;
-	i++;
-	t.Start();
-	// kick off the kernel and send the staging buffer screen.surface as an argument to allow the kernel to write to it
-	cuda_texture_2d(screen, sm.scene);
-	//cuda_texture_2dx(screen, sm.scene);
-	getLastCudaError("cuda_texture_2d failed");
+	cuda_texture_2dx(screen, sm.scene);
+	//cuda_texture_2d(screen, sm.scene);
 	cudaDeviceSynchronize();
-	t.Stop();
-	if (i % 10 == 0)
-		printf("inner %f\n", t.GetMilisecondsElapsed()/i);
-
+	getLastCudaError("cuda_texture_2d failed");
 
 	// then we want to copy screen.surface to the D3D texture, via its mapped form : cudaArray
 	cudaMemcpy2DToArray(
@@ -45,9 +29,6 @@ void RayTracingKernel::Run()
 		cudaMemcpyDeviceToDevice); // kind
 	getLastCudaError("cudaMemcpy2DToArray failed");
 
-	//
-	// unmap the resources
-	//
 	cudaGraphicsUnmapResources(1, &cudaResource, 0);
 	getLastCudaError("cudaGraphicsUnmapResources(1) failed");
 }

@@ -42,8 +42,12 @@ void Cleanup()
 
 void Render()
 {
+	static Timer t;
+	t.Restart();
 	rtk.Run();
 	dxm.DrawScene();
+	t.Stop();
+	printf("frame: %f\n", t.GetMilisecondsElapsed());
 }
 
 void HandleInput()

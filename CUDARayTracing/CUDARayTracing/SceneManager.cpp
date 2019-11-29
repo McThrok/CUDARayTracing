@@ -2,9 +2,10 @@
 
 void SceneManager::InitScene(int screenWidth, int screenHeight) {
 	cam = new Camera(screenWidth, screenHeight);
+	cam->position = vec3(0, 0, 20);
 	UpdateCamera();
 
-	scene.sphere_num = 32;
+	scene.sphere_num = 32*16;
 
 	vec3* h_position = new vec3[scene.sphere_num];
 	float* h_radius = new float[scene.sphere_num];
@@ -32,7 +33,7 @@ float SceneManager::getRandomFloat(float min, float max) {
 }
 
 void SceneManager::getRandomSphere(vec3& position, float& radius, vec3& color) {
-	radius = getRandomFloat(0.3, 3);
+	radius = getRandomFloat(0.3, 1);
 
 	color.x = getRandomFloat(0, 1);
 	color.y = getRandomFloat(0, 1);
