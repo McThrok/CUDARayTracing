@@ -14,17 +14,31 @@
 
 #define PI 3.1415926536f
 
-#define DIFFUSE 0.8
+#define DIFFUSE 0.5
 #define AMBIENT 0.2
 
 
 __device__ vec3 getSphereColor(vec3& position, vec3& color, vec3& point) {
-	vec3 lightPos = vec3(0, 15, 25);
-	vec3 n = point - position;
+	vec3 toLight;
+	float diff;
 
-	vec3 toLight = (lightPos - point).norm();
-	float diff = fmaxf(toLight.dot(n), 0);
-	return color * (diff * DIFFUSE + AMBIENT);
+	vec3 normal = point - position;
+	vec3 c = vec3(AMBIENT, AMBIENT, AMBIENT);
+
+	toLight = (vec3( 1, 0, -0.5)).norm();
+	diff = fmaxf(toLight.dot(normal), 0);
+	c += (diff * DIFFUSE);
+
+
+	toLight = (vec3(-1, 0, -0.5)).norm();
+	diff = fmaxf(toLight.dot(normal), 0);
+	c += (diff * DIFFUSE);
+
+	toLight = (vec3( 0, 1, -0.5)).norm();
+	diff = fmaxf(toLight.dot(normal), 0);
+	c += (diff * DIFFUSE);
+
+	return color * c;
 }
 
 __device__ vec3 castScreenRay(CameraData& c, int& x, int& y, int& width, int& height) {
@@ -91,7 +105,7 @@ __global__ void draw(Screen screen, Scene scene)
 	}
 	else {
 		pixel[0] = 0.0;
-		pixel[1] = 1.0f;
+		pixel[1] = 0.0f;
 		pixel[2] = 0.0f;
 
 	}
@@ -104,7 +118,7 @@ void execute_kernel(Screen screen, Scene scene)
 
 	//dim3 Db = dim3(16, 16);   // block dimensions are fixed to be 256 threads
 	//dim3 Dg = dim3((screen.width + Db.x - 1) / Db.x, (screen.width + Db.y - 1) / Db.y);
-	dim3 Db = dim3(32, 16);  
+	dim3 Db = dim3(32, 16);
 	dim3 Dg = dim3(screen.width / Db.x, screen.height / Db.y);
 
 	draw << <Dg, Db >> > (screen, scene);

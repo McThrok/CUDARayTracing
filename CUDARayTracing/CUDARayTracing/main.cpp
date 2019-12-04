@@ -76,6 +76,8 @@ void HandleInput()
 	{
 		speed *= 5;
 	}
+	else
+		speed *= 50;
 
 	if ((GetKeyState(0x51) & 0x80) != 0)//q 
 	{
