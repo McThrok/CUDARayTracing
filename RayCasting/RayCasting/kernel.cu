@@ -117,7 +117,6 @@ void execute_kernel(Screen screen, Scene scene)
 	cudaError_t error = cudaSuccess;
 
 	//dim3 Db = dim3(16, 16);   // block dimensions are fixed to be 256 threads
-	//dim3 Dg = dim3((screen.width + Db.x - 1) / Db.x, (screen.width + Db.y - 1) / Db.y);
 	dim3 Db = dim3(32, 16);
 	dim3 Dg = dim3(screen.width / Db.x, screen.height / Db.y);
 
